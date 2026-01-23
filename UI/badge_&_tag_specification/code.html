@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Badge &amp; Tag Specification | Cyberpunk UI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df2f2",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#102222",
+                        "success-neon": "#39ff14",
+                        "danger-magenta": "#ff00ff",
+                        "warning-orange": "#ffaa00",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Space Grotesk", sans-serif;
+        }
+        .clip-tag {
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+        .clip-chip {
+            clip-path: polygon(0 0, 92% 0, 100% 25%, 100% 100%, 8% 100%, 0 75%);
+        }
+        .scanline {
+            background: linear-gradient(to bottom, transparent 50%, rgba(13, 242, 242, 0.05) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen relative overflow-x-hidden">
+<!-- Scanline overlay -->
+<div class="fixed inset-0 scanline z-50"></div>
+<div class="layout-container flex h-full grow flex-col">
+<!-- TopNavBar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/20 bg-background-light dark:bg-background-dark px-10 py-3 sticky top-0 z-40">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6 flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl">token</span>
+</div>
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] font-display uppercase">COMP_LIB: BADGE_TAG_SPEC</h2>
+</div>
+<div class="hidden md:flex items-center gap-9">
+<a class="text-slate-600 dark:text-slate-300 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Components</a>
+<a class="text-slate-600 dark:text-slate-300 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Documentation</a>
+<a class="text-slate-600 dark:text-slate-300 hover:text-primary text-sm font-medium leading-normal transition-colors" href="#">Design System</a>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<label class="flex flex-col min-w-40 !h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full overflow-hidden border border-primary/20">
+<div class="text-primary flex bg-primary/10 items-center justify-center pl-4 pr-2">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 border-none bg-primary/5 focus:ring-0 h-full placeholder:text-primary/50 text-slate-900 dark:text-white text-base font-normal" placeholder="Search parameters..." value=""/>
+</div>
+</label>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-background-dark text-sm font-bold leading-normal tracking-[0.015em] shadow-[0_0_15px_rgba(13,242,242,0.4)]">
+<span class="truncate uppercase">System Status: Online</span>
+</button>
+</div>
+</header>
+<div class="flex flex-1">
+<!-- SideNavBar -->
+<aside class="w-64 border-r border-primary/10 bg-background-light dark:bg-background-dark p-4 hidden lg:flex flex-col justify-between">
+<div class="flex flex-col gap-6">
+<div class="flex flex-col px-3">
+<h1 class="text-slate-900 dark:text-white text-base font-bold uppercase tracking-wider">HUD Indicators</h1>
+<p class="text-primary text-xs font-mono">v2.4.0-CYBERPUNK</p>
+</div>
+<nav class="flex flex-col gap-2">
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary border border-primary/30">
+<span class="material-symbols-outlined">notifications</span>
+<p class="text-sm font-bold uppercase">Badges</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary cursor-pointer transition-all">
+<span class="material-symbols-outlined">label</span>
+<p class="text-sm font-medium uppercase">Tags</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary cursor-pointer transition-all">
+<span class="material-symbols-outlined">memory</span>
+<p class="text-sm font-medium uppercase">Chips</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary cursor-pointer transition-all">
+<span class="material-symbols-outlined">terminal</span>
+<p class="text-sm font-medium uppercase">Code Snippets</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary cursor-pointer transition-all border-t border-primary/10 mt-4 pt-4">
+<span class="material-symbols-outlined">settings_input_component</span>
+<p class="text-sm font-medium uppercase">Theme Settings</p>
+</div>
+</nav>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto px-6 py-8 md:px-12 lg:px-20">
+<div class="max-w-5xl mx-auto flex flex-col gap-10">
+<!-- PageHeading -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="w-2 h-8 bg-primary block"></span>
+<p class="text-slate-900 dark:text-white text-5xl font-black leading-tight tracking-tight uppercase font-display">
+                                Badge &amp; Tag Spec
+                            </p>
+</div>
+<p class="text-primary/80 text-lg font-light max-w-2xl border-l border-primary/30 pl-4 ml-4">
+                            Technical data indicators for high-fidelity HUD interfaces. Optimized for rapid perception in high-stress data environments.
+                        </p>
+</div>
+<!-- Numeric Badges Section -->
+<section class="flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-primary/20 pb-2">
+<h2 class="text-slate-900 dark:text-white text-xl font-bold uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">filter_center_focus</span>
+                                Numeric Badges Matrix
+                            </h2>
+<span class="text-xs font-mono text-primary/50">SEC_TYPE: INT_VAL</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
+<!-- Badge Item 1 -->
+<div class="relative flex flex-col gap-4 rounded-xl border border-primary/20 bg-primary/5 p-6 group hover:border-primary/50 transition-all">
+<div class="relative w-12 h-12 flex items-center justify-center bg-background-dark border border-primary/30 rounded-lg">
+<span class="material-symbols-outlined text-primary text-3xl">mail</span>
+<span class="absolute -top-2 -right-2 bg-danger-magenta text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-[0_0_10px_#ff00ff]">99+</span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-slate-900 dark:text-white text-sm font-bold uppercase tracking-tighter">Notification Overflow</h3>
+<p class="text-slate-500 dark:text-slate-400 text-xs">Variant: Danger / Hex: #FF00FF</p>
+</div>
+</div>
+<!-- Badge Item 2 -->
+<div class="relative flex flex-col gap-4 rounded-xl border border-primary/20 bg-primary/5 p-6 group hover:border-primary/50 transition-all">
+<div class="relative w-12 h-12 flex items-center justify-center bg-background-dark border border-primary/30 rounded-lg">
+<span class="material-symbols-outlined text-primary text-3xl">group</span>
+<span class="absolute -top-2 -right-2 bg-primary text-background-dark text-[10px] font-bold px-2 py-0.5 rounded shadow-[0_0_10px_#0df2f2]">5</span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-slate-900 dark:text-white text-sm font-bold uppercase tracking-tighter">System Updates</h3>
+<p class="text-slate-500 dark:text-slate-400 text-xs">Variant: Info / Hex: #0DF2F2</p>
+</div>
+</div>
+<!-- Badge Item 3 -->
+<div class="relative flex flex-col gap-4 rounded-xl border border-primary/20 bg-primary/5 p-6 group hover:border-primary/50 transition-all">
+<div class="relative w-12 h-12 flex items-center justify-center bg-background-dark border border-primary/30 rounded-lg">
+<span class="material-symbols-outlined text-primary text-3xl">warning</span>
+<span class="absolute -top-1 -right-1 w-3 h-3 bg-warning-orange rounded-full animate-pulse shadow-[0_0_10px_#ffaa00]"></span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-slate-900 dark:text-white text-sm font-bold uppercase tracking-tighter">Dot Indicator</h3>
+<p class="text-slate-500 dark:text-slate-400 text-xs">Variant: Warning / Hex: #FFAA00</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Tags Section -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center justify-between border-b border-primary/20 pb-2">
+<h2 class="text-slate-900 dark:text-white text-xl font-bold uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">style</span>
+                                Semantic Tags (Clipped)
+                            </h2>
+<span class="text-xs font-mono text-primary/50">SEC_TYPE: TAG_GEOM</span>
+</div>
+<div class="flex flex-wrap gap-4 p-8 bg-slate-100 dark:bg-primary/5 rounded-xl border border-dashed border-primary/30">
+<!-- Tag Info -->
+<div class="clip-tag bg-primary px-6 py-1.5 flex items-center gap-2">
+<span class="material-symbols-outlined text-background-dark text-sm">info</span>
+<span class="text-background-dark font-bold text-xs uppercase tracking-widest">Security: High</span>
+</div>
+<!-- Tag Success -->
+<div class="clip-tag bg-success-neon px-6 py-1.5 flex items-center gap-2 shadow-[0_0_15px_rgba(57,255,20,0.3)]">
+<span class="material-symbols-outlined text-background-dark text-sm">verified</span>
+<span class="text-background-dark font-bold text-xs uppercase tracking-widest">Encrypted</span>
+</div>
+<!-- Tag Warning -->
+<div class="clip-tag bg-warning-orange px-6 py-1.5 flex items-center gap-2">
+<span class="material-symbols-outlined text-background-dark text-sm">database</span>
+<span class="text-background-dark font-bold text-xs uppercase tracking-widest">Legacy DB</span>
+</div>
+<!-- Tag Danger -->
+<div class="clip-tag bg-danger-magenta px-6 py-1.5 flex items-center gap-2 shadow-[0_0_15px_rgba(255,0,255,0.3)]">
+<span class="material-symbols-outlined text-white text-sm">dangerous</span>
+<span class="text-white font-bold text-xs uppercase tracking-widest">Unauthorized</span>
+</div>
+<!-- Outline Variant -->
+<div class="clip-tag border border-primary text-primary px-6 py-1.5 flex items-center gap-2 hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-sm">lan</span>
+<span class="font-bold text-xs uppercase tracking-widest">External Node</span>
+</div>
+</div>
+</section>
+<!-- Chips Section -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center justify-between border-b border-primary/20 pb-2">
+<h2 class="text-slate-900 dark:text-white text-xl font-bold uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">chips</span>
+                                Actionable Chips
+                            </h2>
+<span class="text-xs font-mono text-primary/50">SEC_TYPE: CHIP_ACT</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="flex flex-col gap-4">
+<p class="text-sm text-primary uppercase font-bold">Standard Chips</p>
+<div class="flex flex-wrap gap-3">
+<div class="flex items-center gap-2 px-3 py-1 bg-primary/20 border border-primary/40 rounded-full text-primary text-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[16px]">user_attributes</span>
+                                        Root Admin
+                                    </div>
+<div class="flex items-center gap-2 px-3 py-1 bg-primary/20 border border-primary/40 rounded-full text-primary text-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[16px]">vpn_key</span>
+                                        SSH-Key
+                                    </div>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<p class="text-sm text-danger-magenta uppercase font-bold">Deletable State (Hover X)</p>
+<div class="flex flex-wrap gap-3">
+<!-- Deletable Chip -->
+<div class="group flex items-center gap-2 pl-3 pr-1 py-1 bg-primary/10 border border-primary/30 clip-chip text-primary text-xs font-bold uppercase cursor-pointer hover:bg-danger-magenta hover:text-white hover:border-danger-magenta transition-all duration-200">
+                                        User_492
+                                        <span class="material-symbols-outlined text-[14px] bg-primary/20 group-hover:bg-white/20 rounded p-0.5">close</span>
+</div>
+<div class="group flex items-center gap-2 pl-3 pr-1 py-1 bg-primary/10 border border-primary/30 clip-chip text-primary text-xs font-bold uppercase cursor-pointer hover:bg-danger-magenta hover:text-white hover:border-danger-magenta transition-all duration-200">
+                                        Sub_Sector_9
+                                        <span class="material-symbols-outlined text-[14px] bg-primary/20 group-hover:bg-white/20 rounded p-0.5">close</span>
+</div>
+<div class="group flex items-center gap-2 pl-3 pr-1 py-1 bg-primary/10 border border-primary/30 clip-chip text-primary text-xs font-bold uppercase cursor-pointer hover:bg-danger-magenta hover:text-white hover:border-danger-magenta transition-all duration-200">
+                                        Global_Access
+                                        <span class="material-symbols-outlined text-[14px] bg-primary/20 group-hover:bg-white/20 rounded p-0.5">close</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Technical Specs Grid -->
+<section class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-primary/10 pt-10">
+<div class="flex flex-col gap-2 p-4 bg-slate-100 dark:bg-black/40 rounded-lg">
+<span class="text-primary text-[10px] font-mono">SPEC_01</span>
+<h4 class="text-white text-sm font-bold uppercase">Geometry</h4>
+<p class="text-slate-400 text-xs">Clipped corners utilize CSS `clip-path` polygon values for 10% angular offset on primary axes.</p>
+</div>
+<div class="flex flex-col gap-2 p-4 bg-slate-100 dark:bg-black/40 rounded-lg">
+<span class="text-primary text-[10px] font-mono">SPEC_02</span>
+<h4 class="text-white text-sm font-bold uppercase">Luminescence</h4>
+<p class="text-slate-400 text-xs">Semantic variants use variable box-shadow glow intensity: `0 0 10px [color]0.4`.</p>
+</div>
+<div class="flex flex-col gap-2 p-4 bg-slate-100 dark:bg-black/40 rounded-lg">
+<span class="text-primary text-[10px] font-mono">SPEC_03</span>
+<h4 class="text-white text-sm font-bold uppercase">Typography</h4>
+<p class="text-slate-400 text-xs">Space Grotesk Monospace. Case: Uppercase. Tracking: 0.1em for maximum legibility in HUDs.</p>
+</div>
+</section>
+</div>
+<!-- Footer Info -->
+<footer class="mt-20 py-6 border-t border-primary/10 text-center">
+<p class="text-primary/40 font-mono text-[10px] uppercase tracking-[0.5em]">Terminal Connection Secured // End of Specification</p>
+</footer>
+</main>
+</div>
+</div>
+</body></html>

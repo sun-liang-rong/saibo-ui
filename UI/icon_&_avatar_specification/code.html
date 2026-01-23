@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CYBER_SPEC: ICON &amp; AVATAR</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df2f2",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#102222",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .holographic-overlay {
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(13, 242, 242, 0.1) 0px,
+                rgba(13, 242, 242, 0.1) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            pointer-events: none;
+        }
+        .glitch-effect {
+            position: relative;
+            box-shadow: -2px 0 #ff00ff, 2px 0 #0df2f2;
+        }
+        .hover-glow:hover {
+            box-shadow: 0 0 15px rgba(13, 242, 242, 0.6);
+            border-color: #0df2f2;
+        }
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(13, 242, 242, 0.3);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white min-h-screen">
+<!-- TopNavBar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-[#283939] px-10 py-3 bg-white dark:bg-background-dark sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">CYBER_SPEC</h2>
+</div>
+<nav class="hidden md:flex items-center gap-9">
+<a class="text-slate-600 dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Components</a>
+<a class="text-slate-600 dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Styles</a>
+<a class="text-slate-600 dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Layout</a>
+<a class="text-slate-600 dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Animation</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<label class="hidden lg:flex flex-col min-w-40 !h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full border border-slate-200 dark:border-none">
+<div class="text-slate-400 dark:text-[#9cbaba] flex bg-white dark:bg-[#283939] items-center justify-center pl-4 rounded-l-lg">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 border-none bg-white dark:bg-[#283939] text-slate-900 dark:text-white focus:ring-0 placeholder:text-slate-400 dark:placeholder:text-[#9cbaba] px-2 text-base font-normal rounded-r-lg" placeholder="Search specs..." value=""/>
+</div>
+</label>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-background-dark text-sm font-bold tracking-[0.015em]">
+<span class="truncate">v1.0.4-STABLE</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary" data-alt="Cyberpunk character portrait with neon lighting" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBg7Xqo3eUjH5Vn93hL1ztalzmsR9MEwajYzhrTJlu8egN_F4PyZKYzKs943MzPuq1c7oyTMw21dv-JiUPjtRGCnAWi4zXEKI4KeMHfe72ptcE9QR8fNSUUkj1JmZcHJm06HRpId5wCXFtkWSCRmWonoKeAkh5SwxeO2F-YGGQDv4crcFpYW3TKhFoikElPjY-uLv9WwTeXNhSFkUsTa3eD3J8Drb0BRQg6eLj0E6zlYLbLRelFoacpJpcyuAmRCu8I-3WfEV3F2FGu");'></div>
+</div>
+</header>
+<div class="flex flex-1">
+<!-- SideNavBar -->
+<aside class="w-64 hidden xl:flex flex-col justify-between bg-white dark:bg-background-dark border-r border-slate-200 dark:border-[#283939] p-4 sticky top-[65px] h-[calc(100vh-65px)]">
+<div class="flex flex-col gap-4">
+<div class="flex flex-col px-3 mb-4">
+<h1 class="text-slate-900 dark:text-white text-base font-bold tracking-widest">CYBER_SYSTEM</h1>
+<p class="text-slate-500 dark:text-[#9cbaba] text-xs font-mono">UI_LIB_CORE // 0.42</p>
+</div>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-100 dark:bg-[#283939] text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<p class="text-sm font-medium">Overview</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a2e2e] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="token">token</span>
+<p class="text-sm font-medium">IconButtons</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a2e2e] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<p class="text-sm font-medium">Avatar Gallery</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a2e2e] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="auto_fix_high">auto_fix_high</span>
+<p class="text-sm font-medium">States &amp; Effects</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-white hover:bg-slate-50 dark:hover:bg-[#1a2e2e] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<p class="text-sm font-medium">Technical Specs</p>
+</a>
+</div>
+</div>
+<div class="p-3 bg-primary/10 rounded-lg border border-primary/20">
+<p class="text-[10px] text-primary uppercase font-bold mb-1">System Status</p>
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-xs text-primary/80 font-mono">All modules nominal</span>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 max-w-[1200px] mx-auto p-6 md:p-10">
+<!-- PageHeading -->
+<div class="flex flex-wrap justify-between items-end gap-6 mb-10 border-b border-slate-200 dark:border-[#283939] pb-8">
+<div class="flex min-w-72 flex-col gap-3">
+<div class="flex items-center gap-2 text-primary text-xs font-mono mb-[-8px]">
+<span>REF_092</span>
+<span class="opacity-30">|</span>
+<span>UI_KIT_VOL_4</span>
+</div>
+<p class="text-slate-900 dark:text-white text-4xl md:text-5xl font-black leading-tight tracking-[-0.033em] uppercase">ICON &amp; AVATAR <br/><span class="text-primary/60">SPECIFICATION</span></p>
+<p class="text-slate-500 dark:text-[#9cbaba] text-base font-normal max-w-xl">Technical documentation for holographic interface elements, bio-metric displays, and user identity modules in the Cyber System ecosystem.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center rounded-lg h-10 px-6 bg-slate-200 dark:bg-[#283939] text-slate-900 dark:text-white text-sm font-bold tracking-[0.015em] hover:bg-slate-300 dark:hover:bg-[#344b4b] transition-colors">
+<span>Copy Code</span>
+</button>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center rounded-lg h-10 px-6 bg-primary text-background-dark text-sm font-bold tracking-[0.015em] shadow-[0_0_15px_rgba(13,242,242,0.4)]">
+<span>Preview Live</span>
+</button>
+</div>
+</div>
+<!-- Tabs Section -->
+<div class="mb-10">
+<div class="flex border-b border-slate-200 dark:border-[#3b5454] px-4 gap-12 overflow-x-auto">
+<a class="flex flex-col items-center justify-center border-b-[3px] border-primary text-primary pb-[13px] pt-4 whitespace-nowrap" href="#">
+<p class="text-sm font-bold tracking-[0.015em]">CORE VARIANTS</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-transparent text-slate-400 dark:text-[#9cbaba] pb-[13px] pt-4 whitespace-nowrap hover:text-slate-600 dark:hover:text-white transition-colors" href="#">
+<p class="text-sm font-bold tracking-[0.015em]">INTERACTIVE STATES</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-transparent text-slate-400 dark:text-[#9cbaba] pb-[13px] pt-4 whitespace-nowrap hover:text-slate-600 dark:hover:text-white transition-colors" href="#">
+<p class="text-sm font-bold tracking-[0.015em]">LAYOUT GRID</p>
+</a>
+</div>
+</div>
+<!-- Section: IconButton Variants -->
+<div class="mb-16">
+<div class="flex items-center gap-4 mb-6">
+<h2 class="text-slate-900 dark:text-white text-2xl font-bold leading-tight tracking-[-0.015em] uppercase">ICON_BUTTON VARIANTS</h2>
+<div class="h-[1px] flex-1 bg-slate-200 dark:bg-[#283939]"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- SM 24px -->
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-[#283939] p-6 rounded-xl">
+<p class="text-xs font-mono text-primary mb-4">SIZE_SM // 24PX</p>
+<div class="flex items-center gap-6">
+<button class="size-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-[#283939] text-slate-600 dark:text-white hover-glow transition-all">
+<span class="material-symbols-outlined !text-xl">settings</span>
+</button>
+<button class="size-10 flex items-center justify-center rounded-full border border-slate-200 dark:border-[#283939] text-slate-600 dark:text-white hover-glow transition-all">
+<span class="material-symbols-outlined !text-xl">notifications</span>
+</button>
+</div>
+</div>
+<!-- MD 48px -->
+<div class="bg-white dark:bg-background-dark border border-primary/40 p-6 rounded-xl shadow-[inset_0_0_10px_rgba(13,242,242,0.1)]">
+<p class="text-xs font-mono text-primary mb-4">SIZE_MD // 48PX [DEFAULT]</p>
+<div class="flex items-center gap-6">
+<button class="size-14 flex items-center justify-center rounded-lg border border-primary text-primary bg-primary/10 hover-glow transition-all">
+<span class="material-symbols-outlined !text-2xl">shield</span>
+</button>
+<button class="size-14 flex items-center justify-center rounded-full border border-primary text-primary bg-primary/10 hover-glow transition-all">
+<span class="material-symbols-outlined !text-2xl">terminal</span>
+</button>
+</div>
+</div>
+<!-- LG 96px -->
+<div class="bg-white dark:bg-background-dark border border-slate-200 dark:border-[#283939] p-6 rounded-xl">
+<p class="text-xs font-mono text-primary mb-4">SIZE_LG // 96PX</p>
+<div class="flex items-center gap-6">
+<button class="size-20 flex items-center justify-center rounded-lg border border-slate-200 dark:border-[#283939] text-slate-600 dark:text-white hover-glow transition-all">
+<span class="material-symbols-outlined !text-4xl">database</span>
+</button>
+<button class="size-20 flex items-center justify-center rounded-full border border-slate-200 dark:border-[#283939] text-slate-600 dark:text-white hover-glow transition-all">
+<span class="material-symbols-outlined !text-4xl">memory</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Section: Avatar Gallery -->
+<div class="mb-16">
+<div class="flex items-center gap-4 mb-6">
+<h2 class="text-slate-900 dark:text-white text-2xl font-bold leading-tight tracking-[-0.015em] uppercase">BIO_METRIC AVATARS</h2>
+<div class="h-[1px] flex-1 bg-slate-200 dark:border-[#283939]"></div>
+</div>
+<div class="space-y-8">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Standard & Status -->
+<div class="bg-slate-50 dark:bg-[#1a2e2e]/50 p-8 rounded-xl border border-slate-200 dark:border-[#283939]">
+<p class="text-sm font-bold mb-6 text-slate-500 dark:text-[#9cbaba] uppercase tracking-widest">Status Indicators</p>
+<div class="flex flex-wrap items-center gap-10">
+<div class="relative group">
+<div class="size-24 rounded-full border-4 border-primary p-1 bg-background-dark overflow-hidden">
+<div class="w-full h-full rounded-full bg-cover bg-center" data-alt="Cyberpunk woman with blue hair" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD70LvH9DkFeVJH0JwhaD4KiFtrQ7rhC8-DjfiJ6AfY8WIyGCKgrUl-BoghpsYnNR-n2PYtnhlzo-GoDY9WJpJkfgsFmbdIFI9nqbOJG8UfCzbdhjBuKE5liQ5_zWXpFkdzVCRecTfxgfKzAOBf1v69BYAdeioefDUoSGZYjTRsAUYkX0noWYOELRxT-UAbJRUNK5OUPTp8WCFyEvBJ9unm2-ERbPwgC4MOqtMLYavdTUnJ9gtTqUA1QAP9R7nvxjmqn3qujPY8Jv7E');"></div>
+</div>
+<div class="absolute bottom-1 right-1 size-6 rounded-full bg-primary border-4 border-background-dark"></div>
+<p class="text-center mt-3 text-xs font-mono text-primary uppercase">Online</p>
+</div>
+<div class="relative group">
+<div class="size-24 rounded-full border-4 border-slate-600 p-1 bg-background-dark overflow-hidden grayscale">
+<div class="w-full h-full rounded-full bg-cover bg-center" data-alt="Serious tech-wear man in low light" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCuhGnRaffeASzPNS6SDIN8D74nvgitW6X14Qh4cYMKKPgnd-C3gdmZobJ5jUxDaNwsKXl6lGJXbvGSZoEPJ01htZMbJjrG501AM9FrhPRyqAPmka7_XfjkYmSz_SNvHE9AVhE2uI-quNKhmb_FIU3DSK7Odju2k9tR4Bd5S-u0gzidxYlgDlPdt8KFHLUqSjk58NM3t_eM-Fj092bD_Oz2h243XwJLAvD-b5ZcAbJU27YfkBKRDZN2Jjo7kZByjqd9uUH7Dj7ZVulE');"></div>
+</div>
+<div class="absolute bottom-1 right-1 size-6 rounded-full bg-slate-600 border-4 border-background-dark"></div>
+<p class="text-center mt-3 text-xs font-mono text-slate-500 uppercase">Offline</p>
+</div>
+<div class="relative group">
+<div class="size-24 rounded-full border-4 border-yellow-500 p-1 bg-background-dark overflow-hidden">
+<div class="w-full h-full rounded-full bg-cover bg-center" data-alt="Person with VR headset" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC6jjh4pJrM_nPyPyF_92-Ke9Ppmr7_ekApCQl0Dv1mggksu0OgM9pCezT8gmzdDFcb-HPuLBvqUsBnO2yQpnwJv2hTU8xwZZF-mNz8bd-lDS8g4d6VVzHhPKHfrdNZUb48uTXTIh5M-3oMUSGNHhsLIBfOfWAHELM5O7JcxtlBAhuAFZYzcezt4KywepYbc_NdyayeZyxti6pefNQjczVPr91EhqSmOG2oYEXsfpWFTUQeXm8qFhjZeI5qtp4nl3PmFVLUZaoVBe84');"></div>
+</div>
+<div class="absolute bottom-1 right-1 size-6 rounded-full bg-yellow-500 border-4 border-background-dark"></div>
+<p class="text-center mt-3 text-xs font-mono text-yellow-500 uppercase">Away</p>
+</div>
+</div>
+</div>
+<!-- Special States -->
+<div class="bg-slate-50 dark:bg-[#1a2e2e]/50 p-8 rounded-xl border border-slate-200 dark:border-[#283939]">
+<p class="text-sm font-bold mb-6 text-slate-500 dark:text-[#9cbaba] uppercase tracking-widest">Holographic &amp; Corrupted</p>
+<div class="flex flex-wrap items-center gap-10">
+<!-- Holographic -->
+<div class="relative group">
+<div class="size-24 rounded-lg border-2 border-primary/50 overflow-hidden relative">
+<div class="w-full h-full bg-cover bg-center opacity-70" data-alt="Digital construct profile" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAPkpL22l9lv4dy1AupL5mEj6twBrp37IjxCYiKOaFIrDFhBx5YIm8AwRUvJmoXW9-olO8vu7w_-G8urvaqxS30D2CHg2bw_ST-fREoOjWT77n9EfZe6sutipN8etLcQxa-hhPpbqbg88qsgsPDTBkJ3qyHWOI7mPetKiP1NkPNpzqT8quwcF6O-RZX-tTo26VWO8Qy8B-eIuP0kOsPjehpqOws-KRYXYwJh4Xo8XIlGiVIAoV7VWVVxCU6bC3HKdzJb8t2OzM_R-cq');"></div>
+<div class="absolute inset-0 holographic-overlay"></div>
+<div class="scanline animate-bounce"></div>
+</div>
+<p class="text-center mt-3 text-xs font-mono text-primary/80 uppercase">Hologram</p>
+</div>
+<!-- Corrupted / Glitch -->
+<div class="relative group">
+<div class="size-24 rounded-lg border-2 border-red-500/50 overflow-hidden relative glitch-effect">
+<div class="w-full h-full bg-cover bg-center" data-alt="Glitched portrait effect" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBexKTWxbuEURRsASjNRvdAXmD_YrnPDC5GcD08Wdbm6qWikZzMUOv2Y21-KG-nKVaONoz2OxWinQ0wphmHUfv2N992C-PNI9j4M5eHU8huQzRsu-dwYqet1Tvp0b7MqzZJRe45IiojlR8y-427f8TWLsZcUpb0AUk829W09vbADsd_qzrH2mMTg7HLmILPuNyE0MNBZXo2zSTZlO8_Bx3_CycSvis8my4vcpfvwpTFW8mMkWg18d9LsuvTbnTHw6cAvCpYcXK3rHXC');"></div>
+<div class="absolute inset-0 bg-red-500/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-red-500 !text-3xl">warning</span>
+</div>
+</div>
+<p class="text-center mt-3 text-xs font-mono text-red-500 uppercase">Corrupted</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Technical Table -->
+<div class="mb-16">
+<div class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-[#283939] overflow-hidden">
+<div class="bg-slate-50 dark:bg-[#1a2e2e] px-6 py-4 border-b border-slate-200 dark:border-[#283939]">
+<p class="text-sm font-bold tracking-widest text-slate-900 dark:text-white uppercase">Technical Specification Table</p>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="text-slate-500 dark:text-[#9cbaba] text-xs font-mono uppercase border-b border-slate-100 dark:border-[#283939]">
+<th class="px-6 py-4">Prop_ID</th>
+<th class="px-6 py-4">Dimension</th>
+<th class="px-6 py-4">Stroke_Weight</th>
+<th class="px-6 py-4">Glow_Intensity</th>
+<th class="px-6 py-4">Usage</th>
+</tr>
+</thead>
+<tbody class="text-sm font-mono text-slate-700 dark:text-white/80">
+<tr class="border-b border-slate-100 dark:border-[#283939]">
+<td class="px-6 py-4 text-primary">SIZE_SM</td>
+<td class="px-6 py-4">24x24 px</td>
+<td class="px-6 py-4">1.5 pt</td>
+<td class="px-6 py-4">Low</td>
+<td class="px-6 py-4">Toolbars, dense UI</td>
+</tr>
+<tr class="border-b border-slate-100 dark:border-[#283939] bg-primary/5">
+<td class="px-6 py-4 text-primary">SIZE_MD</td>
+<td class="px-6 py-4">48x48 px</td>
+<td class="px-6 py-4">2.0 pt</td>
+<td class="px-6 py-4">Medium</td>
+<td class="px-6 py-4">Standard actions</td>
+</tr>
+<tr>
+<td class="px-6 py-4 text-primary">SIZE_LG</td>
+<td class="px-6 py-4">96x96 px</td>
+<td class="px-6 py-4">3.0 pt</td>
+<td class="px-6 py-4">High</td>
+<td class="px-6 py-4">Hero sections, profiles</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Documentation Footer -->
+<footer class="flex flex-col md:flex-row justify-between items-center gap-6 py-10 border-t border-slate-200 dark:border-[#283939]">
+<div class="flex items-center gap-4">
+<div class="size-10 bg-primary/10 flex items-center justify-center rounded-lg border border-primary/20">
+<span class="material-symbols-outlined text-primary">help</span>
+</div>
+<div>
+<p class="text-slate-900 dark:text-white font-bold text-sm">Need help with implementation?</p>
+<p class="text-slate-500 dark:text-[#9cbaba] text-xs">Join our comms channel #dev-ui-core</p>
+</div>
+</div>
+<div class="flex gap-4">
+<a class="text-xs font-mono text-slate-400 dark:text-slate-500 hover:text-primary" href="#">GIT_REPOSITORY</a>
+<a class="text-xs font-mono text-slate-400 dark:text-slate-500 hover:text-primary" href="#">FIGMA_SOURCE</a>
+<a class="text-xs font-mono text-slate-400 dark:text-slate-500 hover:text-primary" href="#">CHANGELOG</a>
+</div>
+</footer>
+</main>
+</div>
+</body></html>

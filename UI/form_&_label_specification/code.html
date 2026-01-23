@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Form &amp; Label Specification - Cyberpunk UI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#06f9f9",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0f2323",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .cyber-border {
+            border: 1px solid rgba(6, 249, 249, 0.2);
+            position: relative;
+        }
+        .cyber-border::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 10px;
+            height: 10px;
+            border-top: 2px solid #06f9f9;
+            border-left: 2px solid #06f9f9;
+        }
+        .cyber-border::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 10px;
+            height: 10px;
+            border-bottom: 2px solid #06f9f9;
+            border-right: 2px solid #06f9f9;
+        }
+        .scanline {
+            background: linear-gradient(to bottom, transparent 50%, rgba(6, 249, 249, 0.02) 50%);
+            background-size: 100% 4px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111818] dark:text-white min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#273a3a] px-10 py-3 bg-background-light dark:bg-background-dark">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-[-0.015em]">FORM_SPEC_v1.0</h2>
+</div>
+<div class="hidden md:flex items-center gap-9">
+<a class="text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Components</a>
+<a class="text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Layouts</a>
+<a class="text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Documentation</a>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<label class="hidden sm:flex flex-col min-w-40 !h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full overflow-hidden">
+<div class="text-[#9bbbbb] flex border-none bg-[#273a3a] items-center justify-center pl-4 border-r-0">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-white focus:outline-0 focus:ring-1 focus:ring-primary border-none bg-[#273a3a] h-full placeholder:text-[#9bbbbb] px-4 pl-2 text-base font-normal" placeholder="Search Module" value=""/>
+</div>
+</label>
+<button class="flex min-w-[120px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-[#111818] text-sm font-bold leading-normal tracking-[0.015em] hover:brightness-110 transition-all shadow-[0_0_15px_rgba(6,249,249,0.3)]">
+<span class="truncate">SYSTEM ACCESS</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-primary/30" data-alt="User avatar placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCkg5FdKC8U0DEvd7Ge2D3L1QashBU8XxUtXFtw7Mqdk_MWCCgTr-iguFGa1gMKMK2WvKXPTCKlFTf7Z2omTQh1UXnMcjJMBaP0aaNuKA23gojSKs-_1NsU35r_dKm5Manbojz9hLB26UtPGmrnXGfXXA1Gbf7prepAx2_vbtivbNC7FVaSJjP9MX8X9ldJdKbQwzcljVpUXmRN8MCdzMeI2Xveifnp7jhHDeuo1eowSYRbroJXo2AEh3oMo56_y6KPRwNXjZUIBd2O");'></div>
+</div>
+</header>
+<main class="flex-1 flex flex-col items-center">
+<div class="layout-content-container flex flex-col max-w-[1200px] w-full px-6 md:px-10 py-8">
+<!-- Breadcrumbs -->
+<div class="flex flex-wrap gap-2 py-2">
+<a class="text-[#9bbbbb] text-sm font-medium leading-normal hover:text-primary" href="#">UI_LIBRARY</a>
+<span class="text-[#9bbbbb] text-sm font-medium leading-normal">/</span>
+<a class="text-[#9bbbbb] text-sm font-medium leading-normal hover:text-primary" href="#">CORE_MODULES</a>
+<span class="text-[#9bbbbb] text-sm font-medium leading-normal">/</span>
+<span class="text-primary text-sm font-medium leading-normal">FORM_LABEL_SPEC</span>
+</div>
+<!-- Page Heading -->
+<div class="flex flex-wrap justify-between items-end gap-3 py-6 border-b border-[#273a3a] mb-8">
+<div class="flex min-w-72 flex-col gap-2">
+<p class="text-primary text-4xl font-black leading-tight tracking-[-0.033em] uppercase">Form &amp; Label Specification</p>
+<p class="text-[#9bbbbb] text-base font-normal leading-normal max-w-2xl">High-fidelity tech-noir interface standards for form control alignment, fieldsets, and technical data input states.</p>
+</div>
+<div class="flex gap-4">
+<button class="flex min-w-[120px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-transparent border border-primary/40 text-primary text-sm font-bold hover:bg-primary/10 transition-all">
+<span class="truncate">EXPORT_SPEC</span>
+</button>
+</div>
+</div>
+<!-- Section: Atomic Elements -->
+<div class="mb-12">
+<h2 class="text-white text-[18px] font-bold leading-tight tracking-widest px-4 pb-4 uppercase border-l-4 border-primary bg-primary/5">
+                        [SEC-01] Atomic_Labels_&amp;_States
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
+<div class="flex flex-1 gap-3 rounded-lg border border-[#3a5555] bg-[#1b2727]/40 p-5 flex-col hover:border-primary/50 transition-all group">
+<div class="text-primary" data-icon="label">
+<span class="material-symbols-outlined">label</span>
+</div>
+<div class="flex flex-col gap-1">
+<h2 class="text-white text-base font-bold leading-tight uppercase tracking-wider">Standard Label</h2>
+<p class="text-[#9bbbbb] text-xs font-normal leading-normal">Default state for high-readability form markers.</p>
+<div class="mt-4 pt-4 border-t border-[#3a5555]">
+<label class="text-sm font-bold text-white uppercase opacity-80">Username_Field</label>
+</div>
+</div>
+</div>
+<div class="flex flex-1 gap-3 rounded-lg border border-primary bg-[#1b2727]/60 p-5 flex-col shadow-[0_0_15px_rgba(6,249,249,0.1)]">
+<div class="text-primary">
+<span class="material-symbols-outlined">emergency</span>
+</div>
+<div class="flex flex-col gap-1">
+<h2 class="text-white text-base font-bold leading-tight uppercase tracking-wider">Required Label <span class="text-primary">*</span></h2>
+<p class="text-[#9bbbbb] text-xs font-normal leading-normal">Mandatory input indicator with glowing asterisk.</p>
+<div class="mt-4 pt-4 border-t border-[#3a5555]">
+<label class="text-sm font-bold text-white uppercase">Access_Key <span class="text-primary text-lg leading-none">*</span></label>
+</div>
+</div>
+</div>
+<div class="flex flex-1 gap-3 rounded-lg border border-[#3a5555] bg-[#1b2727]/40 p-5 flex-col">
+<div class="text-primary">
+<span class="material-symbols-outlined">info</span>
+</div>
+<div class="flex flex-col gap-1">
+<h2 class="text-white text-base font-bold leading-tight uppercase tracking-wider">Meta Label [SEC-01]</h2>
+<p class="text-[#9bbbbb] text-xs font-normal leading-normal">Technical micro-copy for specific data protocols.</p>
+<div class="mt-4 pt-4 border-t border-[#3a5555]">
+<label class="text-[10px] font-bold text-primary/70 uppercase tracking-[2px]">[System_UID_Verification]</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section: Molecule Controls -->
+<div class="mb-12">
+<h2 class="text-white text-[18px] font-bold leading-tight tracking-widest px-4 pb-4 uppercase border-l-4 border-primary bg-primary/5 mb-6">
+                        [SEC-02] Molecule_Control_Validation
+                    </h2>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-10 p-4">
+<!-- FormControl Vertical Stack -->
+<div class="space-y-8">
+<!-- Default State -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<label class="text-xs font-bold text-[#9bbbbb] uppercase tracking-wider">Interface_ID</label>
+<span class="text-[10px] text-primary/50 font-mono">STATUS: READY</span>
+</div>
+<input class="bg-[#1b2727] border border-[#3a5555] rounded-md px-4 py-3 text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-[#3a5555]" placeholder="ENTER_ENTITY_ID" type="text"/>
+<p class="text-[10px] text-[#9bbbbb]/60 italic">Alphanumeric string required for neural link.</p>
+</div>
+<!-- Focus State -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<label class="text-xs font-bold text-primary uppercase tracking-wider">Command_Stream</label>
+<span class="text-[10px] text-primary font-mono animate-pulse">ACTIVE_SCANNING...</span>
+</div>
+<input class="bg-[#1b2727] border-2 border-primary rounded-md px-4 py-3 text-white shadow-[0_0_10px_rgba(6,249,249,0.2)] outline-none" type="text" value="QUERY_DATA_CORE_771"/>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">sensors</span>
+<p class="text-[10px] text-primary uppercase">Transmitting via secure channel...</p>
+</div>
+</div>
+<!-- Error State -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<label class="text-xs font-bold text-red-500 uppercase tracking-wider">Access_Token <span class="text-red-500">*</span></label>
+<span class="text-[10px] text-red-500 font-mono">CODE: 403_DENIED</span>
+</div>
+<input class="bg-[#1b2727] border border-red-500 rounded-md px-4 py-3 text-red-500 focus:ring-1 focus:ring-red-500 outline-none" type="password" value="••••••••"/>
+<div class="flex items-center gap-2 bg-red-500/10 p-2 rounded">
+<span class="material-symbols-outlined text-[16px] text-red-500">warning</span>
+<p class="text-[10px] text-red-400 font-bold uppercase">Critical: Neural handshake failed. Retry authentication.</p>
+</div>
+</div>
+</div>
+<!-- Technical Grid Example -->
+<div class="cyber-border p-8 bg-background-dark/50 scanline rounded-lg">
+<h3 class="text-primary font-black mb-6 border-b border-primary/20 pb-2 uppercase text-xl">Protocol_Group_v4</h3>
+<div class="space-y-6">
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<label class="text-[10px] text-primary uppercase font-bold">X-Coord</label>
+<input class="bg-[#111818] border border-primary/30 rounded text-xs p-2 text-primary font-mono" type="text" value="127.00.1"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[10px] text-primary uppercase font-bold">Y-Coord</label>
+<input class="bg-[#111818] border border-primary/30 rounded text-xs p-2 text-primary font-mono" type="text" value="882.11.0"/>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[10px] text-primary uppercase font-bold">Priority_Class</label>
+<div class="flex gap-2">
+<button class="flex-1 py-2 bg-primary text-background-dark font-black text-[10px] uppercase">Alpha</button>
+<button class="flex-1 py-2 border border-primary/30 text-primary/50 font-black text-[10px] uppercase">Beta</button>
+<button class="flex-1 py-2 border border-primary/30 text-primary/50 font-black text-[10px] uppercase">Gamma</button>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-primary/20">
+<div class="flex items-center gap-4">
+<div class="flex-1 h-1 bg-primary/20">
+<div class="h-full bg-primary w-2/3"></div>
+</div>
+<span class="text-[10px] text-primary font-mono">66%_SYNC</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section: Structure (Fieldsets) -->
+<div class="mb-12">
+<h2 class="text-white text-[18px] font-bold leading-tight tracking-widest px-4 pb-4 uppercase border-l-4 border-primary bg-primary/5 mb-6">
+                        [SEC-03] Fieldset_Structures
+                    </h2>
+<fieldset class="border border-[#3a5555] rounded-xl p-8 relative mb-8">
+<legend class="px-4 text-primary font-bold tracking-[0.2em] text-sm bg-background-dark">
+                            [USER_BIOMETRIC_PROFILE]
+                        </legend>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase text-[#9bbbbb]">Primary_Alias</label>
+<input class="bg-[#1b2727] border border-[#3a5555] rounded px-4 py-2 text-white" type="text" value="NEO_SYNTH_77"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase text-[#9bbbbb]">Sector_Origin</label>
+<select class="bg-[#1b2727] border border-[#3a5555] rounded px-4 py-2 text-white appearance-none">
+<option>NEO-TOKYO_SUBLEVEL_4</option>
+<option>ORBITAL_STATION_ZENITH</option>
+<option>WASTELAND_ZONE_RED</option>
+</select>
+</div>
+<div class="md:col-span-2 flex flex-col gap-2">
+<label class="text-xs font-bold uppercase text-[#9bbbbb]">Profile_Signature</label>
+<textarea class="bg-[#1b2727] border border-[#3a5555] rounded px-4 py-2 text-white h-24" placeholder="Enter neural signature description..."></textarea>
+</div>
+</div>
+</fieldset>
+</div>
+<!-- Full Form Layout Example -->
+<div class="mb-12">
+<h2 class="text-white text-[18px] font-bold leading-tight tracking-widest px-4 pb-4 uppercase border-l-4 border-primary bg-primary/5 mb-8">
+                        [SEC-04] Full_Layout_Deployment
+                    </h2>
+<div class="max-w-4xl mx-auto bg-[#1b2727]/30 border border-[#3a5555] p-10 rounded-xl">
+<div class="flex flex-col gap-8">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-2xl font-black text-white uppercase mb-2 tracking-tighter">System_Registry</h3>
+<p class="text-[#9bbbbb] text-sm">Initialize your identity on the secure neural mesh.</p>
+</div>
+<div class="text-right">
+<div class="text-[10px] text-primary/40 font-mono">SESSION_ID: 9X-771-A</div>
+<div class="text-[10px] text-primary/40 font-mono">LATENCY: 12ms</div>
+</div>
+</div>
+<form class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase text-[#9bbbbb]">Real_Name</label>
+<input class="bg-background-dark/80 border border-[#3a5555] rounded px-4 py-2 text-white focus:border-primary focus:ring-0" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase text-[#9bbbbb]">Network_Address <span class="text-primary">*</span></label>
+<input class="bg-background-dark/80 border border-[#3a5555] rounded px-4 py-2 text-white focus:border-primary focus:ring-0" placeholder="user@mesh.net" type="email"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase text-[#9bbbbb]">Security_Key</label>
+<input class="bg-background-dark/80 border border-[#3a5555] rounded px-4 py-2 text-white focus:border-primary focus:ring-0" type="password"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase text-[#9bbbbb]">Confirm_Key</label>
+<input class="bg-background-dark/80 border border-[#3a5555] rounded px-4 py-2 text-white focus:border-primary focus:ring-0" type="password"/>
+</div>
+<div class="md:col-span-2 py-4">
+<label class="flex items-center gap-3 cursor-pointer group">
+<div class="relative w-5 h-5 border-2 border-primary rounded flex items-center justify-center transition-all group-hover:bg-primary/10">
+<span class="material-symbols-outlined text-[16px] text-primary font-bold">check</span>
+</div>
+<span class="text-xs text-[#9bbbbb] uppercase font-bold group-hover:text-primary transition-colors">I accept the neural interface terms and conditions of the Corporation.</span>
+</label>
+</div>
+<div class="md:col-span-2 flex justify-end gap-4 mt-4">
+<button class="px-8 py-3 rounded text-sm font-bold uppercase text-[#9bbbbb] hover:text-white transition-colors" type="button">Abort</button>
+<button class="px-10 py-3 bg-primary text-[#111818] rounded font-black uppercase tracking-widest shadow-[0_0_20px_rgba(6,249,249,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all" type="button">
+                                        Initialize_Mesh
+                                    </button>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Technical Footer -->
+<footer class="border-t border-[#273a3a] py-6 px-10 flex flex-col md:flex-row justify-between items-center gap-4 bg-background-light dark:bg-background-dark">
+<div class="flex items-center gap-2">
+<div class="size-3 bg-primary rounded-full animate-pulse shadow-[0_0_10px_#06f9f9]"></div>
+<span class="text-[10px] font-mono text-[#9bbbbb] uppercase tracking-widest">System_Online // Core_v1.0.42</span>
+</div>
+<div class="flex gap-8 text-[10px] font-mono text-[#9bbbbb] uppercase tracking-tighter">
+<a class="hover:text-primary" href="#">EULA_AGREEMENT</a>
+<a class="hover:text-primary" href="#">SECURITY_LOGS</a>
+<a class="hover:text-primary" href="#">API_REFERENCE</a>
+</div>
+<div class="text-[10px] font-mono text-[#9bbbbb] uppercase">
+                © 2024 NEURAL_TECH_INDUSTRIES
+            </div>
+</footer>
+</div>
+</div>
+</body></html>

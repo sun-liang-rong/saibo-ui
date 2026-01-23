@@ -1,0 +1,29 @@
+{
+  "name": "monorepo-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modern React Component Library with Monorepo Architecture",
+  "scripts": {
+    "dev": "pnpm --filter @my-org/ui storybook",
+    "build": "pnpm --filter @my-org/ui build",
+    "test": "pnpm --filter @my-org/ui test",
+    "lint": "pnpm --filter @my-org/ui lint",
+    "format": "pnpm --filter @my-org/ui format",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
