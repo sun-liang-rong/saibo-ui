@@ -1,0 +1,78 @@
+/* 全局样式覆盖 */
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* 表格样式优化 */
+.ant-table {
+  font-size: 14px;
+}
+
+.ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+/* 标签样式优化 */
+.ant-tag {
+  margin: 0;
+}
+
+/* 模态框样式优化 */
+.ant-modal-header {
+  border-radius: 8px 8px 0 0;
+}
+
+.ant-modal-content {
+  border-radius: 8px;
+}
+
+/* 统计卡片样式 */
+.ant-statistic-title {
+  font-size: 14px;
+  color: #666;
+}
+
+.ant-statistic-content {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* 描述列表样式 */
+.ant-descriptions-item-label {
+  font-weight: 600;
+  background: #fafafa;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .ant-layout-header {
+    padding: 0 20px !important;
+  }
+
+  .ant-layout-content {
+    padding: 16px 20px !important;
+  }
+
+  /* 在小屏幕上隐藏一些不重要的列 */
+  .ant-table-column-hide-in-mobile {
+    display: none;
+  }
+}

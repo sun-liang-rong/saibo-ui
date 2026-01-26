@@ -1,0 +1,5 @@
+
+// 获取天气信息
+GET http://localhost:3000/emails/weather-test?city=合肥 HTTP/1.1
+
+content-type: application/json
