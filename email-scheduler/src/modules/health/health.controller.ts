@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ScheduledEmail } from '../email/entities/scheduled-email.entity';
-import { EmailStatus } from 'src/modules/email/entities/scheduled-email.entity';
+import { EmailStatus } from '../../modules/email/entities/scheduled-email.entity';
 /**
  * 健康检查控制器
  *

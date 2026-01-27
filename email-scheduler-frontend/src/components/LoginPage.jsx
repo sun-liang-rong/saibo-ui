@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, message, Typography } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './LoginPage.css';
@@ -49,11 +49,26 @@ const LoginPage = () => {
 
   return (
     <div className="login-page">
+      {/* 背景装饰 */}
+      <div className="login-bg-decoration">
+        <div className="circle circle-1"></div>
+        <div className="circle circle-2"></div>
+        <div className="circle circle-3"></div>
+      </div>
+
       <div className="login-container">
-        <Card className="login-card">
+        <Card className="login-card fade-in">
           <div className="login-header">
-            <Title level={2}>定时邮件发送系统</Title>
-            <Text type="secondary">请登录以继续</Text>
+            <div className="login-icon">
+              <MailOutlined />
+            </div>
+            <Title level={2} className="login-title">
+              定时邮件发送系统
+            </Title>
+            <Text className="login-subtitle">Email Scheduler</Text>
+            <Text type="secondary" className="login-description">
+              请使用您的账号登录系统
+            </Text>
           </div>
 
           <Form
@@ -100,16 +115,19 @@ const LoginPage = () => {
                 htmlType="submit"
                 loading={loading}
                 block
+                size="large"
               >
-                登录
+                登 录
               </Button>
             </Form.Item>
           </Form>
 
           <div className="login-footer">
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              默认账号：admin / admin123
-            </Text>
+            <div className="login-tips">
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                💡 测试账号：admin / admin123
+              </Text>
+            </div>
           </div>
         </Card>
       </div>

@@ -13,13 +13,210 @@ import {
   Row,
   Col,
   Tag,
+  Divider,
+  Avatar,
 } from 'antd';
-import { MailOutlined, ClockCircleOutlined, SendOutlined, CalendarOutlined, CloudOutlined, FileTextOutlined } from '@ant-design/icons';
+import { MailOutlined, ClockCircleOutlined, SendOutlined, CalendarOutlined, CloudOutlined, FileTextOutlined, EyeOutlined, UserOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { createEmailTask, updateEmailTask } from '../services/emailService';
 import { TEMPLATES, getTemplatesByCategory, getCategories } from '../template/templates';
 
 const { TextArea } = Input;
+
+/**
+ * 邮件预览卡片组件
+ * 展示邮件的实时预览效果
+ */
+const EmailPreviewCard = ({ subject, content, toEmail, sendTime, includeWeather, weatherCity }) => {
+  const [previewVisible, setPreviewVisible] = useState(false);
+
+  // 生成收件人头像颜色
+  const avatarColor = toEmail
+    ? `hsl(${toEmail.charCodeAt(0) * 10 % 360}, 70%, 45%)`
+    : '#1890ff';
+
+  // 生成发件人名称（从邮箱地址提取）
+  const senderName = toEmail ? toEmail.split('@')[0] : '收件人';
+
+  return (
+    <div>
+      <div
+        onClick={() => setPreviewVisible(!previewVisible)}
+        style={{
+          cursor: 'pointer',
+          padding: '12px 16px',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '8px 8px 0 0',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          transition: 'all 0.3s',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        <Space size="middle">
+          <EyeOutlined style={{ fontSize: '16px' }} />
+          <span style={{ fontWeight: 600, fontSize: '14px' }}>
+            邮件预览 {previewVisible ? '（收起）' : '（展开）'}
+          </span>
+        </Space>
+        <Tag color="white" style={{ margin: 0, border: 'none', color: '#667eea' }}>
+          实时
+        </Tag>
+      </div>
+
+      {previewVisible && (
+        <Card
+          bordered={false}
+          style={{
+            borderRadius: '0 0 8px 8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            marginTop: -1,
+          }}
+          bodyStyle={{ padding: 0 }}
+        >
+          {/* 邮件头部 */}
+          <div style={{
+            padding: '20px 24px',
+            background: '#fafafa',
+            borderBottom: '1px solid #f0f0f0'
+          }}>
+            <Row gutter={[16, 12]} align="middle">
+              <Col>
+                <Avatar
+                  size={48}
+                  style={{
+                    backgroundColor: avatarColor,
+                    fontSize: '20px',
+                    fontWeight: 600
+                  }}
+                  icon={<UserOutlined />}
+                />
+              </Col>
+              <Col flex="1">
+                <div style={{ marginBottom: 4 }}>
+                  <span style={{
+                    fontSize: '14px',
+                    color: '#8c8c8c',
+                    marginRight: 8
+                  }}>
+                    收件人：
+                  </span>
+                  <span style={{
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: '#262626'
+                  }}>
+                    {toEmail || '未填写'}
+                  </span>
+                </div>
+                <div>
+                  <span style={{
+                    fontSize: '14px',
+                    color: '#8c8c8c',
+                    marginRight: 8
+                  }}>
+                    主题：
+                  </span>
+                  <span style={{
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: '#262626'
+                  }}>
+                    {subject || '未填写'}
+                  </span>
+                </div>
+              </Col>
+            </Row>
+
+            {(sendTime || includeWeather) && (
+              <>
+                <Divider style={{ margin: '16px 0' }} />
+                <Space size="middle" wrap>
+                  {sendTime && (
+                    <Tag
+                      icon={<ClockCircleOutlined />}
+                      color="blue"
+                      style={{
+                        padding: '4px 12px',
+                        fontSize: '13px',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      发送时间：{dayjs(sendTime).format('YYYY-MM-DD HH:mm')}
+                    </Tag>
+                  )}
+                  {includeWeather && weatherCity && (
+                    <Tag
+                      icon={<CloudOutlined />}
+                      color="cyan"
+                      style={{
+                        padding: '4px 12px',
+                        fontSize: '13px',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      包含{weatherCity}天气
+                    </Tag>
+                  )}
+                </Space>
+              </>
+            )}
+          </div>
+
+          {/* 邮件内容预览 */}
+          <div style={{
+            padding: '24px',
+            background: '#fff',
+            minHeight: '200px',
+            maxHeight: '400px',
+            overflow: 'auto'
+          }}>
+            {content ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: content }}
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '1.8',
+                  color: '#262626',
+                  wordBreak: 'break-word'
+                }}
+              />
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                padding: '40px 20px',
+                color: '#bfbfbf'
+              }}>
+                <MailOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
+                <div style={{ fontSize: '14px' }}>暂无邮件内容</div>
+              </div>
+            )}
+          </div>
+
+          {/* 邮件底部提示 */}
+          <div style={{
+            padding: '12px 24px',
+            background: '#fafafa',
+            borderTop: '1px solid #f0f0f0',
+            fontSize: '12px',
+            color: '#8c8c8c',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span>此邮件由邮件调度系统自动发送</span>
+            <Tag color="default" style={{ margin: 0, fontSize: '11px' }}>
+              预览模式
+            </Tag>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+};
 
 /**
  * 邮件任务表单组件
@@ -40,6 +237,7 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   // 每次弹窗打开（visible 变为 true）时，同步数据
   useEffect(() => {
@@ -64,8 +262,9 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
           weather_city: '',
         });
       }
-      // 重置分类选择
+      // 重置分类选择和模板选择
       setSelectedCategory(null);
+      setSelectedTemplate(null);
     }
   }, [visible, editData, form]);
   /**
@@ -198,7 +397,11 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
               placeholder="选择分类筛选模板"
               size="large"
               allowClear
-              onChange={setSelectedCategory}
+              onChange={(value) => {
+                setSelectedCategory(value);
+                // 切换分类时清除已选择的模板
+                setSelectedTemplate(null);
+              }}
               value={selectedCategory}
             >
               {getCategories().map(category => (
@@ -211,7 +414,11 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
               placeholder="或直接选择模板"
               size="large"
               allowClear
-              onChange={handleTemplateChange}
+              onChange={(value) => {
+                handleTemplateChange(value);
+                setSelectedTemplate(value);
+              }}
+              value={selectedTemplate}
               showSearch
               filterOption={(input, option) =>
                 (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
@@ -277,23 +484,36 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
           />
         </Form.Item>
 
-        {/* 预览区域 */}
-        <Form.Item label="内容预览">
-          <Card size="small" style={{ background: '#f5f5f5' }}>
-            <div
-              dangerouslySetInnerHTML={{
-                __html: form.getFieldValue('content') || '<span style="color: #999;">暂无内容</span>',
-              }}
-              style={{
-                maxHeight: 200,
-                overflow: 'auto',
-                padding: 10,
-                background: 'white',
-                border: '1px solid #d9d9d9',
-                borderRadius: 4,
-              }}
-            />
-          </Card>
+        {/* 邮件内容预览 - 实时响应表单变化 */}
+        <Form.Item label="邮件预览">
+          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => {
+            return prevValues.to_email !== currentValues.to_email ||
+                   prevValues.subject !== currentValues.subject ||
+                   prevValues.content !== currentValues.content ||
+                   prevValues.send_time !== currentValues.send_time ||
+                   prevValues.include_weather !== currentValues.include_weather ||
+                   prevValues.weather_city !== currentValues.weather_city;
+          }}>
+            {({ getFieldValue }) => {
+              const toEmail = getFieldValue('to_email');
+              const subject = getFieldValue('subject');
+              const content = getFieldValue('content');
+              const sendTime = getFieldValue('send_time');
+              const includeWeather = getFieldValue('include_weather');
+              const weatherCity = getFieldValue('weather_city');
+
+              return (
+                <EmailPreviewCard
+                  subject={subject}
+                  content={content}
+                  toEmail={toEmail}
+                  sendTime={sendTime}
+                  includeWeather={includeWeather}
+                  weatherCity={weatherCity}
+                />
+              );
+            }}
+          </Form.Item>
         </Form.Item>
 
         {/* 调度频率 */}

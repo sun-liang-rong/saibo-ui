@@ -8,9 +8,12 @@ import {
   message,
   Tooltip,
   Card,
-  Statistic,
   Row,
   Col,
+  Input,
+  Select,
+  Empty,
+  Badge,
 } from 'antd';
 import {
   EditOutlined,
@@ -18,6 +21,12 @@ import {
   EyeOutlined,
   ReloadOutlined,
   CalendarOutlined,
+  SearchOutlined,
+  FilterOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  MailOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
@@ -57,14 +66,15 @@ const weekDayText = {
 };
 
 /**
- * 邮件任务列表组件
+ * 邮件任务列表组件 - 专业版
  *
  * 功能：
  * 1. 展示所有邮件任务（分页）
- * 2. 支持按状态筛选
- * 3. 支持编辑、删除操作（仅限待发送状态）
+ * 2. 支持按状态筛选、关键词搜索
+ * 3. 支持编辑、删除操作
  * 4. 实时刷新任务列表
  * 5. 显示任务统计信息
+ * 6. 批量操作
  */
 const EmailTaskList = () => {
   const [emails, setEmails] = useState([]);
@@ -81,14 +91,14 @@ const EmailTaskList = () => {
     failed: 0,
     retrying: 0,
   });
-  const [filters, setFilters] = useState({});
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    sent: 0,
-    failed: 0,
-    retrying: 0,
+  const [filters, setFilters] = useState({
+    status: undefined,
+    frequency: undefined,
   });
+  const [searchKeyword, setSearchKeyword] = useState('');
+
+  // 表格选择
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   // 模态框状态
   const [formVisible, setFormVisible] = useState(false);
@@ -106,6 +116,7 @@ const EmailTaskList = () => {
         page,
         limit: pageSize,
         status: filters.status,
+        keyword: searchKeyword || undefined,
       });
 
       setEmails(response.data);
@@ -122,29 +133,16 @@ const EmailTaskList = () => {
       setLoading(false);
     }
   };
+
   /**
    * 获取邮件总计
    */
   const loadEmailTotal = async () => {
     try {
       const response = await getEmailTotal();
-      console.log(response, 'response')
       setEmailTotal(response);
     } catch (error) {
-      console.error('加载邮件任务失败:', error);
-    }
-  };
-
-  /**
-   * 加载统计信息
-   */
-  const loadStats = async () => {
-    try {
-      // TODO: 调用统计 API
-      // const response = await getEmailStats();
-      // setStats(response);
-    } catch (error) {
-      console.error('加载统计信息失败:', error);
+      console.error('加载邮件统计失败:', error);
     }
   };
 
@@ -153,26 +151,24 @@ const EmailTaskList = () => {
    */
   useEffect(() => {
     loadEmails();
-    loadStats();
     loadEmailTotal();
 
     // 设置定时刷新（每 30 秒）
     const interval = setInterval(() => {
       loadEmails();
-      loadStats();
       loadEmailTotal();
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [filters]);
+  }, [filters, searchKeyword]);
 
   /**
    * 处理表格变化（分页、筛选等）
    */
-  const handleTableChange = (pagination, filters, sorter) => {
-    const statusFilter = filters.status ? filters.status[0] : undefined;
-    setFilters({ status: statusFilter });
-    loadEmails(pagination.current, pagination.pageSize);
+  const handleTableChange = (newPagination, newFilters) => {
+    const statusFilter = newFilters.status ? newFilters.status[0] : undefined;
+    setFilters((prev) => ({ ...prev, status: statusFilter }));
+    loadEmails(newPagination.current, newPagination.pageSize);
   };
 
   /**
@@ -183,10 +179,33 @@ const EmailTaskList = () => {
       await deleteEmailTask(id);
       message.success('邮件任务删除成功');
       loadEmails();
-      loadStats();
+      loadEmailTotal();
     } catch (error) {
       console.error('删除邮件任务失败:', error);
       message.error(error.response?.data?.message || '删除失败，请稍后重试');
+    }
+  };
+
+  /**
+   * 批量删除
+   */
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请至少选择一项');
+      return;
+    }
+
+    try {
+      for (const id of selectedRowKeys) {
+        await deleteEmailTask(id);
+      }
+      message.success(`成功删除 ${selectedRowKeys.length} 个任务`);
+      setSelectedRowKeys([]);
+      loadEmails();
+      loadEmailTotal();
+    } catch (error) {
+      console.error('批量删除失败:', error);
+      message.error('批量删除失败，请稍后重试');
     }
   };
 
@@ -220,8 +239,38 @@ const EmailTaskList = () => {
   const handleFormSuccess = () => {
     setFormVisible(false);
     loadEmails();
-    loadStats();
+    loadEmailTotal();
   };
+
+  /**
+   * 统计卡片配置
+   */
+  const statsCards = [
+    {
+      title: '总任务数',
+      value: emailTotal.total,
+      color: '#1890ff',
+      icon: <MailOutlined />,
+    },
+    {
+      title: '待发送',
+      value: emailTotal.pending,
+      color: '#faad14',
+      icon: <ClockCircleOutlined />,
+    },
+    {
+      title: '已发送',
+      value: emailTotal.sent,
+      color: '#52c41a',
+      icon: <CheckOutlined />,
+    },
+    {
+      title: '失败',
+      value: emailTotal.failed,
+      color: '#ff4d4f',
+      icon: <CloseOutlined />,
+    },
+  ];
 
   /**
    * 表格列配置
@@ -245,25 +294,23 @@ const EmailTaskList = () => {
       title: '标题',
       dataIndex: 'subject',
       key: 'subject',
-      width: 200,
+      width: 220,
       ellipsis: true,
     },
     {
       title: '调度频率',
       dataIndex: 'frequency',
       key: 'frequency',
-      width: 120,
+      width: 140,
       render: (frequency, record) => {
         const text = frequencyText[frequency] || frequency;
         const color = frequencyColor[frequency] || 'default';
         let fullText = text;
 
-        // 如果是每周任务，显示星期几
         if (frequency === 'weekly' && record.week_day) {
           fullText = `${text} ${weekDayText[record.week_day]}`;
         }
 
-        // 如果是子任务，显示标记
         if (record.parent_id) {
           fullText += ' (子)';
         }
@@ -280,7 +327,7 @@ const EmailTaskList = () => {
       dataIndex: 'send_time',
       key: 'send_time',
       width: 180,
-      render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
+      render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm'),
       sorter: (a, b) => dayjs(a.send_time).unix() - dayjs(b.send_time).unix(),
     },
     {
@@ -312,7 +359,7 @@ const EmailTaskList = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
+      render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm'),
     },
     {
       title: '操作',
@@ -321,27 +368,26 @@ const EmailTaskList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          {/* 查看详情 */}
           <Tooltip title="查看详情">
             <Button
               type="link"
+              size="small"
               icon={<EyeOutlined />}
               onClick={() => handleView(record)}
             />
           </Tooltip>
 
-          {/* 编辑（仅待发送状态可编辑） */}
           {record.status === EmailStatus.PENDING && (
             <Tooltip title="编辑">
               <Button
                 type="link"
+                size="small"
                 icon={<EditOutlined />}
                 onClick={() => handleEdit(record)}
               />
             </Tooltip>
           )}
 
-          {/* 删除（仅待发送和失败状态可删除） */}
           {(record.status === EmailStatus.PENDING || record.status === EmailStatus.FAILED) && (
             <Popconfirm
               title="确定要删除这个邮件任务吗？"
@@ -350,7 +396,12 @@ const EmailTaskList = () => {
               cancelText="取消"
             >
               <Tooltip title="删除">
-                <Button type="link" danger icon={<DeleteOutlined />} />
+                <Button
+                  type="link"
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                />
               </Tooltip>
             </Popconfirm>
           )}
@@ -361,69 +412,153 @@ const EmailTaskList = () => {
 
   return (
     <div>
-      {/* 统计信息卡片 */}
-      <Card style={{ marginBottom: 16 }}>
-        <Row gutter={16}>
-          <Col span={6}>
-            <Statistic title="总计" value={emailTotal.total} />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="待发送"
-              value={emailTotal.pending}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="已发送"
-              value={emailTotal.sent}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="失败"
-              value={emailTotal.failed}
-              valueStyle={{ color: '#f5222d' }}
-            />
-          </Col>
-        </Row>
-      </Card>
-
-      {/* 操作栏 */}
-      <Card
-        title="邮件任务列表"
-        extra={
-          <Space>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={() => loadEmails()}
+      {/* 统计卡片 */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        {statsCards.map((stat) => (
+          <Col xs={24} sm={12} lg={6} key={stat.title}>
+            <Card
+              bordered={false}
+              style={{
+                borderRadius: 8,
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+              }}
+              bodyStyle={{ padding: '20px 24px' }}
             >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 8 }}>
+                    {stat.title}
+                  </div>
+                  <div style={{ color: stat.color, fontSize: 28, fontWeight: 600 }}>
+                    {stat.value}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    background: `${stat.color}15`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 20,
+                    color: stat.color,
+                  }}
+                >
+                  {stat.icon}
+                </div>
+              </div>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      {/* 操作和筛选区 */}
+      <Card
+        bordered={false}
+        style={{
+          borderRadius: 8,
+          marginBottom: 16,
+          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+        }}
+        bodyStyle={{ padding: '16px 24px' }}
+      >
+        <Space size="middle" wrap>
+          {/* 搜索框 */}
+          <Input
+            placeholder="搜索标题、收件人..."
+            prefix={<SearchOutlined />}
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            onPressEnter={() => loadEmails(1)}
+            style={{ width: 280 }}
+            allowClear
+          />
+
+          {/* 状态筛选 */}
+          <Select
+            placeholder="选择状态"
+            value={filters.status}
+            onChange={(value) => setFilters((prev) => ({ ...prev, status: value }))}
+            style={{ width: 140 }}
+            allowClear
+          >
+            <Select.Option value={EmailStatus.PENDING}>待发送</Select.Option>
+            <Select.Option value={EmailStatus.SENT}>已发送</Select.Option>
+            <Select.Option value={EmailStatus.FAILED}>发送失败</Select.Option>
+            <Select.Option value={EmailStatus.RETRYING}>重试中</Select.Option>
+          </Select>
+
+          {/* 操作按钮 */}
+          <Space size="small">
+            <Button icon={<ReloadOutlined />} onClick={() => loadEmails()}>
               刷新
             </Button>
-            <Button
-              type="primary"
-              onClick={handleCreate}
-            >
+            {selectedRowKeys.length > 0 && (
+              <Popconfirm
+                title={`确定要删除选中的 ${selectedRowKeys.length} 个任务吗？`}
+                onConfirm={handleBatchDelete}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button danger icon={<DeleteOutlined />}>
+                  批量删除
+                </Button>
+              </Popconfirm>
+            )}
+            <Button type="primary" onClick={handleCreate}>
               创建新任务
             </Button>
           </Space>
-        }
+        </Space>
+      </Card>
+
+      {/* 表格 */}
+      <Card
+        bordered={false}
+        style={{
+          borderRadius: 8,
+          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+        }}
+        bodyStyle={{ padding: 0 }}
       >
         <Table
           columns={columns}
           dataSource={emails}
           rowKey="id"
           loading={loading}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: setSelectedRowKeys,
+            getCheckboxProps: (record) => ({
+              disabled: record.status !== EmailStatus.PENDING && record.status !== EmailStatus.FAILED,
+            }),
+          }}
           pagination={{
             ...pagination,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) => `共 ${total} 条记录`,
+            pageSizeOptions: ['10', '20', '50', '100'],
           }}
           onChange={handleTableChange}
-          scroll={{ x: 1500 }}
+          scroll={{ x: 1400 }}
+          locale={{
+            emptyText: (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <div>
+                    <div style={{ color: '#8c8c8c', marginBottom: 8 }}>暂无邮件任务</div>
+                    <Button type="primary" size="small" onClick={handleCreate}>
+                      创建第一个任务
+                    </Button>
+                  </div>
+                }
+              />
+            ),
+          }}
         />
       </Card>
 
