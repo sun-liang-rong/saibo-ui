@@ -10,10 +10,14 @@ import {
   Card,
   Select,
   Checkbox,
+  Row,
+  Col,
+  Tag,
 } from 'antd';
-import { MailOutlined, ClockCircleOutlined, SendOutlined, CalendarOutlined, CloudOutlined } from '@ant-design/icons';
+import { MailOutlined, ClockCircleOutlined, SendOutlined, CalendarOutlined, CloudOutlined, FileTextOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { createEmailTask, updateEmailTask } from '../services/emailService';
+import { TEMPLATES, getTemplatesByCategory, getCategories } from '../template/templates';
 
 const { TextArea } = Input;
 
@@ -35,26 +39,34 @@ const { TextArea } = Input;
 const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
   // 每次弹窗打开（visible 变为 true）时，同步数据
   useEffect(() => {
-    form.resetFields();
     if (visible) {
       if (editData) {
         // 编辑模式：设置值（自动转 dayjs 如果有日期字段）
         form.setFieldsValue({
           ...editData,
-          // 示例：如果有日期字段
           send_time: editData.send_time ? dayjs(editData.send_time) : null,
         });
       } else {
-        console.log('新建模式')
-        // 新建模式：清空表单
+        // 新建模式：重置表单并设置默认值
+        form.resetFields();
         form.setFieldsValue({
+          to_email: '',
+          subject: '',
+          content: '',
           send_time: getDefaultSendTime(),
-          frequency: editData?.frequency || 'once'
-        })
+          frequency: 'once',
+          week_day: undefined,
+          include_weather: false,
+          weather_city: '',
+        });
       }
-    } 
+      // 重置分类选择
+      setSelectedCategory(null);
+    }
   }, [visible, editData, form]);
   /**
    * 重置表单
@@ -139,6 +151,20 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
     return dayjs().add(1, 'hour');
   };
 
+  /**
+   * 处理模板选择
+   */
+  const handleTemplateChange = (templateId) => {
+    const template = TEMPLATES.find(t => t.id === templateId);
+    if (template) {
+      form.setFieldsValue({
+        subject: template.subject,
+        content: template.content,
+      });
+      message.success(`已应用模板：${template.name}`);
+    }
+  };
+
   return (
     <Modal
       title={editData ? '编辑邮件任务' : '创建新的邮件任务'}
@@ -165,11 +191,49 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
         form={form}
         layout="vertical"
       >
+        {/* 模板选择 */}
+        <Form.Item label="选择模板">
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Select
+              placeholder="选择分类筛选模板"
+              size="large"
+              allowClear
+              onChange={setSelectedCategory}
+              value={selectedCategory}
+            >
+              {getCategories().map(category => (
+                <Select.Option key={category} value={category}>
+                  {category}
+                </Select.Option>
+              ))}
+            </Select>
+            <Select
+              placeholder="或直接选择模板"
+              size="large"
+              allowClear
+              onChange={handleTemplateChange}
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {(selectedCategory ? getTemplatesByCategory(selectedCategory) : TEMPLATES).map(template => (
+                <Select.Option key={template.id} value={template.id} label={template.name}>
+                  <Space>
+                    <FileTextOutlined />
+                    <span>{template.name}</span>
+                    <Tag color="blue" style={{ fontSize: '12px' }}>{template.category}</Tag>
+                  </Space>
+                </Select.Option>
+              ))}
+            </Select>
+          </Space>
+        </Form.Item>
+
         {/* 收件人邮箱 */}
         <Form.Item
           label="收件人邮箱"
           name="to_email"
-          initialValue={editData?.to_email || ''}
           rules={[
             { required: true, message: '请输入收件人邮箱' },
             { type: 'email', message: '请输入有效的邮箱地址' },
@@ -186,7 +250,6 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
         <Form.Item
           label="邮件标题"
           name="subject"
-          initialValue={editData?.subject || ''}
           rules={[
             { required: true, message: '请输入邮件标题' },
             { max: 500, message: '邮件标题不能超过500个字符' },
@@ -202,7 +265,6 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
         <Form.Item
           label="邮件内容"
           name="content"
-          initialValue={editData?.content || ''}
           rules={[
             { required: true, message: '请输入邮件内容' },
           ]}
@@ -264,7 +326,6 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
                 label="星期几"
                 name="week_day"
                 rules={[{ required: true, message: '请选择星期几' }]}
-                initialValue={editData?.week_day}
               >
                 <Select
                   placeholder="请选择星期几"
@@ -288,7 +349,6 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
           label="包含今日天气"
           name="include_weather"
           valuePropName="checked"
-          initialValue={editData?.include_weather || false}
         >
           <Checkbox>在邮件中添加今日天气信息</Checkbox>
         </Form.Item>
@@ -301,7 +361,6 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
                 label="城市"
                 name="weather_city"
                 rules={[{ required: true, message: '请输入城市名称' }]}
-                initialValue={editData?.weather_city}
                 extra="输入需要查询天气的城市名称，例如：北京、上海、深圳"
               >
                 <Input
