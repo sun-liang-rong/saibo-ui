@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { User } from './entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 /**
  * 认证模块
@@ -14,7 +15,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
  * 模块职责：
  * 1. 管理用户认证相关的控制器、服务、实体
  * 2. 配置 JWT 模块和 Passport 策略
- * 3. 导出 AuthService 和 JwtAuthGuard 供其他模块使用
+ * 3. 导出 AuthService、PassportModule 和 JwtAuthGuard 供其他模块使用
  *
  * 依赖：
  * - TypeORM: 管理用户实体
@@ -44,7 +45,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, PassportModule],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  exports: [AuthService, PassportModule, JwtAuthGuard],
 })
 export class AuthModule {}

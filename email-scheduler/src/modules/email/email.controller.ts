@@ -9,12 +9,14 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { EmailService } from './email.service';
 import { CreateEmailDto } from './dto/create-email.dto';
 import { EmailResponseDto } from './dto/email-response.dto';
 import { QueryEmailDto } from './dto/create-email.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * 邮件控制器
@@ -31,14 +33,20 @@ import { QueryEmailDto } from './dto/create-email.dto';
  * - 使用清晰的 URL 路径
  * - 返回合适的 HTTP 状态码
  * - 使用 Swagger 自动生成 API 文档
+ * - 所有接口都需要 JWT 认证（除天气测试接口外）
  */
 @ApiTags('emails')
+@ApiBearerAuth('JWT-auth') // 添加 Swagger JWT 认证标识
 @Controller('emails')
+@UseGuards(JwtAuthGuard) // 全局应用 JWT 认证守卫
 export class EmailController {
   constructor(private readonly emailService: EmailService) {}
+
   @Get('weather-test')
+  @ApiOperation({ summary: '天气测试接口' })
+  @ApiQuery({ name: 'city', required: true, description: '城市名称' })
   async weatherTest(@Query('city') city): Promise<any> {
-    console.log('city', city)
+    console.log('city', city);
     return this.emailService.weatherTest(city);
   }
   /**

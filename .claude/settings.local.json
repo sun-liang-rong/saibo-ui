@@ -5,7 +5,10 @@
       "Edit",
       "Bash(ls:*)",
       "mcp__acp__Bash",
-      "mcp__zcode_internal_tool__new_page"
+      "mcp__zcode_internal_tool__new_page",
+      "Bash(dir)",
+      "Bash(dir:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }

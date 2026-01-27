@@ -1,18 +1,24 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ScheduledEmail } from '../email/entities/scheduled-email.entity';
 import { EmailStatus } from '../../modules/email/entities/scheduled-email.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 /**
  * 健康检查控制器
  *
  * 提供系统健康状态查询接口：
  * - GET /health - 基础健康检查
  * - GET /health/stats - 邮件任务统计信息
+ *
+ * 所有接口都需要 JWT 认证
  */
 @ApiTags('health')
+@ApiBearerAuth('JWT-auth') // 添加 Swagger JWT 认证标识
 @Controller('health')
+@UseGuards(JwtAuthGuard) // 全局应用 JWT 认证守卫
 export class HealthController {
   constructor(
     @InjectRepository(ScheduledEmail)

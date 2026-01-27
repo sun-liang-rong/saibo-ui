@@ -1,14 +1,14 @@
 /**
- * 鲜花模板（已有）
+ * 情侣鲜花表白模板
  */
 import { EmailTemplate } from './templates';
 
 export const flower: EmailTemplate = {
   id: 'flower',
-  name: '鲜花祝福',
-  category: '问候',
-  description: '美丽的鲜花贺卡，适合表达祝福和关爱',
-  subject: '送你一束美丽的花 🌸',
+  name: '鲜花表白',
+  category: '情侣惊喜',
+  description: '用玫瑰花表达深深的爱意，浪漫至极',
+  subject: '送你一束玫瑰，代表我的心 🌹',
   content: `<div style="position:relative; width:320px; height:420px; transform-style:preserve-3d; perspective:1000px; margin:0 auto;">
 
   <!-- 花茎 -->
@@ -68,8 +68,8 @@ export const flower: EmailTemplate = {
   </div>
 
   <!-- 文字（可选，根据需要删除或修改） -->
-  <div style="position:absolute; bottom:-80px; left:50%; transform:translateX(-50%); font-size:1.4rem; color:#37474f; text-shadow:0 2px 8px rgba(0,0,0,0.15); white-space:nowrap;">
-    送给最可爱的你 🌸
+  <div style="position:absolute; bottom:-80px; left:50%; transform:translateX(-50%); font-size:1.4rem; color:#d63384; text-shadow:0 2px 8px rgba(0,0,0,0.15); white-space:nowrap;">
+    我爱你，一生一世 💖
   </div>
 
 </div>
@@ -79,5 +79,25 @@ export const flower: EmailTemplate = {
     0%   { transform: translateX(-50%) rotate(-12deg) translateY(0); }
     100% { transform: translateX(-50%) rotate(12deg)  translateY(-8px); }
   }
-</style>`,
+</style>
+
+<div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 40px auto; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); padding: 30px 20px; border-radius: 20px;">
+  <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+    <h2 style="color: #ff6b95; text-align: center; font-size: 24px; margin-bottom: 20px;">
+      亲爱的，
+    </h2>
+    <p style="color: #555; line-height: 1.8; font-size: 16px; margin-bottom: 15px;">
+      这束玫瑰代表我对你的爱，
+    </p>
+    <p style="color: #555; line-height: 1.8; font-size: 16px; margin-bottom: 15px;">
+      每一朵花瓣都诉说着我想你的点点滴滴，
+    </p>
+    <p style="color: #555; line-height: 1.8; font-size: 16px; margin-bottom: 15px;">
+      愿我们的爱情像玫瑰一样，永远鲜艳美丽！
+    </p>
+    <p style="color: #ff6b95; font-size: 18px; text-align: center; margin-top: 20px; font-weight: bold;">
+      💝 我爱你，直到永远 💝
+    </p>
+  </div>
+</div>`,
 };

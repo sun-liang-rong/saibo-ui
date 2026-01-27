@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Table,
   Tag,
@@ -106,10 +106,14 @@ const EmailTaskList = () => {
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState(null);
 
+  // 使用 useRef 来跟踪最新的请求，避免竞态条件
+  const requestIdRef = useRef(0);
+
   /**
    * 加载邮件任务列表
    */
   const loadEmails = async (page = pagination.current, pageSize = pagination.pageSize) => {
+    const currentRequestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const response = await getEmailTasks({
@@ -119,17 +123,23 @@ const EmailTaskList = () => {
         keyword: searchKeyword || undefined,
       });
 
-      setEmails(response.data);
-      setPagination({
-        current: page,
-        pageSize,
-        total: response.total,
-      });
+      // 只有当这是最新的请求时才更新状态
+      if (currentRequestId === requestIdRef.current) {
+        setEmails(response.data);
+        setPagination({
+          current: page,
+          pageSize,
+          total: response.total,
+        });
+      }
 
       setLoading(false);
     } catch (error) {
-      console.error('加载邮件任务失败:', error);
-      message.error('加载邮件任务失败，请稍后重试');
+      // 只有当这是最新的请求时才显示错误
+      if (currentRequestId === requestIdRef.current) {
+        console.error('加载邮件任务失败:', error);
+        message.error('加载邮件任务失败，请稍后重试');
+      }
       setLoading(false);
     }
   };
@@ -147,28 +157,41 @@ const EmailTaskList = () => {
   };
 
   /**
-   * 初始加载
+   * 初始加载和筛选条件变化时加载
    */
   useEffect(() => {
-    loadEmails();
+    loadEmails(pagination.current, pagination.pageSize);
     loadEmailTotal();
+  }, [filters, searchKeyword]);
 
-    // 设置定时刷新（每 30 秒）
+  /**
+   * 设置定时刷新（每 30 秒）
+   * 使用当前的分页状态刷新数据
+   */
+  useEffect(() => {
     const interval = setInterval(() => {
-      loadEmails();
+      loadEmails(pagination.current, pagination.pageSize);
       loadEmailTotal();
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [filters, searchKeyword]);
+  }, []);
 
   /**
    * 处理表格变化（分页、筛选等）
    */
   const handleTableChange = (newPagination, newFilters) => {
     const statusFilter = newFilters.status ? newFilters.status[0] : undefined;
-    setFilters((prev) => ({ ...prev, status: statusFilter }));
-    loadEmails(newPagination.current, newPagination.pageSize);
+
+    // 只有当筛选条件真正改变时才更新 filters
+    if (statusFilter !== filters.status) {
+      setFilters((prev) => ({ ...prev, status: statusFilter }));
+      // 筛选条件变化时，重置到第一页
+      loadEmails(1, newPagination.pageSize);
+    } else {
+      // 只是分页变化，使用新的页码
+      loadEmails(newPagination.current, newPagination.pageSize);
+    }
   };
 
   /**

@@ -463,6 +463,9 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
           ]}
         >
           <Input
+            type="search"
+            name="subject"
+            autocomplete="off"
             placeholder="请输入邮件标题"
             size="large"
           />
