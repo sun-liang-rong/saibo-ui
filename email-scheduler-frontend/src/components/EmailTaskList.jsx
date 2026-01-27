@@ -265,35 +265,6 @@ const EmailTaskList = () => {
     loadEmailTotal();
   };
 
-  /**
-   * 统计卡片配置
-   */
-  const statsCards = [
-    {
-      title: '总任务数',
-      value: emailTotal.total,
-      color: '#1890ff',
-      icon: <MailOutlined />,
-    },
-    {
-      title: '待发送',
-      value: emailTotal.pending,
-      color: '#faad14',
-      icon: <ClockCircleOutlined />,
-    },
-    {
-      title: '已发送',
-      value: emailTotal.sent,
-      color: '#52c41a',
-      icon: <CheckOutlined />,
-    },
-    {
-      title: '失败',
-      value: emailTotal.failed,
-      color: '#ff4d4f',
-      icon: <CloseOutlined />,
-    },
-  ];
 
   /**
    * 表格列配置
@@ -435,47 +406,6 @@ const EmailTaskList = () => {
 
   return (
     <div>
-      {/* 统计卡片 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        {statsCards.map((stat) => (
-          <Col xs={24} sm={12} lg={6} key={stat.title}>
-            <Card
-              bordered={false}
-              style={{
-                borderRadius: 8,
-                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
-              }}
-              bodyStyle={{ padding: '20px 24px' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 8 }}>
-                    {stat.title}
-                  </div>
-                  <div style={{ color: stat.color, fontSize: 28, fontWeight: 600 }}>
-                    {stat.value}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 12,
-                    background: `${stat.color}15`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 20,
-                    color: stat.color,
-                  }}
-                >
-                  {stat.icon}
-                </div>
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
 
       {/* 操作和筛选区 */}
       <Card
