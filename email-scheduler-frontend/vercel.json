@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://saibo-ui.vercel.app/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
