@@ -17,7 +17,8 @@ async function bootstrap() {
   // 创建 NestJS 应用
   const app = await NestFactory.create(AppModule, {
     // 使用自定义日志服务
-    logger: createLogger(),
+    // 生产关闭日志
+    logger: process.env.NODE_ENV !== 'production' ? createLogger() : null
   });
 
   // 启用全局验证管道
