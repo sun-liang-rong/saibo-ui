@@ -29,7 +29,7 @@ export class ScheduleTaskService {
    * 主调度任务 - 定时扫描邮件规则并发送
    *
    * 执行频率: 每分钟执行一次 (CronExpression.EVERY_MINUTE)
-   * 时区: Asia/Shanghai (北京时间)
+   * 时区: 使用服务器时间
    *
    * 核心执行流程:
    * 1. 从数据库获取所有活跃规则 (is_rule = true 且 status != sent)
@@ -45,7 +45,6 @@ export class ScheduleTaskService {
    */
   @Cron(CronExpression.EVERY_MINUTE, {
     name: 'scheduledEmails',
-    timeZone: 'UTC', // 🔧 改为 UTC,与数据库存储时区一致
   })
   async handleScheduledEmails() {
     this.handlerSendEmails()
@@ -133,8 +132,8 @@ export class ScheduleTaskService {
    *
    * 执行步骤:
    * 1. 创建发送实例: 在数据库中创建一条 is_rule=false 的记录
-   * 2. 执行邮件发送: 调用邮件服务发送邮件
-   * 3. 更新规则状态: 发送成功后更新 last_sent_at 和 next_send_at
+   * 2. 更新规则状态: 创建实例后立即更新 last_sent_at，防止重复触发
+   * 3. 执行邮件发送: 调用邮件服务发送邮件
    *
    * @param rule - 要处理的邮件规则
    * @param now - 当前时间
@@ -148,20 +147,22 @@ export class ScheduleTaskService {
     // - send_time = now (实际发送时间)
     // - status = 'pending' (待发送状态)
     const instance = await this.emailService.createEmailInstance(rule, now);
-    // 第二步: 执行邮件发送
+
+    // 第二步: 立即更新规则状态
+    // 关键修改: 在发送之前更新规则状态,防止因发送耗时或失败导致规则被重复扫描
+    // 规则的任务是"生成实例",一旦实例生成,规则的本周期任务即算完成
+    // 更新规则:
+    // - last_sent_at = now (记录最后发送时间,用于防重复)
+    // - next_send_at = 计算下次发送时间 (用于优化查询)
+    // - status = 'sent' (如果是单次任务,标记为已完成)
+    await this.emailService.updateRuleAfterSent(rule.id, now);
+
+    // 第三步: 执行邮件发送
     // 发送成功后会:
     // - 更新实例的 status = 'sent'
     // - 更新实例的 sent_at = now
     // - 如果发送失败,会更新 error_message 并进行重试
     const success = await this.emailService.sendEmail(instance);
-    // 第三步: 发送成功后更新规则状态
-    if (success) {
-      // 更新规则:
-      // - last_sent_at = now (记录最后发送时间,用于防重复)
-      // - next_send_at = 计算下次发送时间 (用于优化查询)
-      // - status = 'sent' (如果是单次任务,标记为已完成)
-      await this.emailService.updateRuleAfterSent(rule.id, now);
-    }
 
     return success;
   }

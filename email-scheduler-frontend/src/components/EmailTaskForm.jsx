@@ -322,9 +322,8 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
 
       setLoading(true);
 
-      // 🔧 格式化发送时间为中国时区格式 (ISO 8601 with +08:00)
-      // 后端会将其解析为中国时区,然后转换为 UTC 存储
-      const sendTime = values.send_time.format('YYYY-MM-DDTHH:mm:ss+08:00');
+      // 🔧 格式化发送时间
+      const sendTime = values.send_time.format('YYYY-MM-DD HH:mm:ss');
 
       // 构建请求数据
       const data = {
