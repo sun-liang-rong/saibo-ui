@@ -6,17 +6,20 @@ import { CreateEmailDto } from './dto/create-email.dto';
 import { EmailResponseDto } from './dto/email-response.dto';
 import { MailService } from './mail.service';
 import { WeatherService } from '../weather/weather.service';
+import e from 'express';
 
 /**
  * 邮件服务
  *
- * 核心业务逻辑：
- * 1. 创建定时邮件任务
- * 2. 查询邮件列表
- * 3. 查询单个邮件详情
- * 4. 获取待发送的邮件（供定时任务使用）
- * 5. 发送邮件（供定时任务调用）
- * 6. 更新邮件状态
+ * 重构说明：
+ * - 旧逻辑: 创建任务 → 发送 → 创建子任务 → 链式执行
+ * - 新逻辑: 创建规则 → 调度器扫描 → 动态判断 → 创建实例 → 发送
+ *
+ * 核心改进：
+ * 1. 定时邮件 = 规则 + 调度器
+ * 2. 移除 scheduleNextEmail 链式创建逻辑
+ * 3. 添加 getActiveRules, createEmailInstance, updateRuleAfterSent 方法
+ * 4. 支持新频率: 每小时, 纪念日
  */
 @Injectable()
 export class EmailService {
@@ -30,51 +33,31 @@ export class EmailService {
   ) {}
 
   /**
-   * 创建定时邮件任务
+   * 创建邮件规则
    *
    * @param createEmailDto 邮件数据
-   * @returns 创建的邮件任务
+   * @returns 创建的邮件规则
    *
    * 业务逻辑：
-   * 1. 验证发送时间必须在未来
+   * 1. 验证发送时间必须在未来 (对于单次任务)
    * 2. 验证周期性任务的参数
-   * 3. 保存到数据库
-   * 4. 返回创建的任务信息
+   * 3. 保存规则到数据库 (is_rule = true)
+   * 4. 预计算 next_send_at
+   * 5. 返回创建的规则信息
    */
   async create(createEmailDto: CreateEmailDto): Promise<EmailResponseDto> {
-    this.logger.log(`创建新的定时邮件任务: ${createEmailDto.to_email}`);
+    this.logger.log(`创建新的邮件规则: ${createEmailDto.to_email}`);
 
     // 将字符串时间转换为 Date 对象
-    const sendTime = new Date(createEmailDto.send_time);
-
-    // 验证发送时间必须在未来
-    const now = new Date();
-    if (sendTime <= now) {
-      throw new Error('发送时间必须在未来时间');
-    }
+    const sendTime = createEmailDto.send_time ? new Date(createEmailDto.send_time) : null;
 
     // 验证周期性任务参数
     const frequency = createEmailDto.frequency || ScheduleFrequency.ONCE;
 
-    // 如果是每周任务，必须提供星期几
-    if (frequency === ScheduleFrequency.WEEKLY && !createEmailDto.week_day) {
-      throw new Error('每周任务必须指定星期几（1-7）');
-    }
+    // 验证参数
+    this.validateRuleParams(createEmailDto, frequency, sendTime);
 
-    // 如果不是每周任务，不能提供星期几
-    if (frequency !== ScheduleFrequency.WEEKLY && createEmailDto.week_day) {
-      throw new Error('只有每周任务才能指定星期几');
-    }
-
-    // 验证天气相关参数
-    const includeWeather = createEmailDto.include_weather || false;
-
-    // 如果包含天气，必须提供城市
-    if (includeWeather && !createEmailDto.weather_city) {
-      throw new Error('包含天气信息时必须指定城市');
-    }
-
-    // 创建邮件实体
+    // 创建邮件规则实体
     const email = this.emailRepository.create({
       to_email: createEmailDto.to_email,
       subject: createEmailDto.subject,
@@ -84,26 +67,89 @@ export class EmailService {
       retry_count: 0,
       frequency,
       week_day: createEmailDto.week_day || null,
-      parent_id: createEmailDto.parent_id || null,
-      include_weather: includeWeather,
+      parent_id: null, // 规则的 parent_id 始终为 null
+      is_rule: true, // 标记为规则
+      include_weather: createEmailDto.include_weather || false,
       weather_city: createEmailDto.weather_city || null,
+      anniversary_month: createEmailDto.anniversary_month || null,
+      anniversary_day: createEmailDto.anniversary_day || null,
+      last_sent_at: null,
+      next_send_at: null, // 稍后计算
     });
+
+    // 预计算下次发送时间
+    email.next_send_at = this.calculateNextSendTime(email);
 
     // 保存到数据库
     const saved = await this.emailRepository.save(email);
 
-    this.logger.log(`邮件任务创建成功，ID: ${saved.id}, 频率: ${frequency}`);
+    this.logger.log(`邮件规则创建成功，ID: ${saved.id}, 频率: ${frequency}, 下次发送: ${saved.next_send_at}`);
 
     return this.toResponseDto(saved);
   }
 
   /**
-   * 查询邮件列表（分页）
+   * 验证规则参数
+   */
+  private validateRuleParams(
+    createEmailDto: CreateEmailDto,
+    frequency: ScheduleFrequency,
+    sendTime: Date | null,
+  ): void {
+    // 对于单次任务，发送时间必须在未来
+    if (frequency === ScheduleFrequency.ONCE) {
+      if (!sendTime) {
+        throw new Error('单次任务必须指定发送时间');
+      }
+      const now = new Date();
+      if (sendTime <= now) {
+        throw new Error('发送时间必须在未来时间');
+      }
+    }
+
+    // 每小时任务需要指定分钟数
+    if (frequency === ScheduleFrequency.HOURLY && !sendTime) {
+      throw new Error('每小时任务必须指定发送时间（用于确定分钟数）');
+    }
+
+    // 每天任务需要指定时间
+    if (frequency === ScheduleFrequency.DAILY && !sendTime) {
+      throw new Error('每天任务必须指定发送时间');
+    }
+
+    // 每周任务需要指定星期几和时间
+    if (frequency === ScheduleFrequency.WEEKLY) {
+      if (!createEmailDto.week_day) {
+        throw new Error('每周任务必须指定星期几（1-7）');
+      }
+      if (!sendTime) {
+        throw new Error('每周任务必须指定发送时间');
+      }
+    }
+
+    // 纪念日任务需要指定月日
+    if (frequency === ScheduleFrequency.ANNIVERSARY) {
+      if (!createEmailDto.anniversary_month || !createEmailDto.anniversary_day) {
+        throw new Error('纪念日任务必须指定月份和日期');
+      }
+    }
+
+    // 验证天气相关参数
+    const includeWeather = createEmailDto.include_weather || false;
+    if (includeWeather && !createEmailDto.weather_city) {
+      throw new Error('包含天气信息时必须指定城市');
+    }
+  }
+
+  /**
+   * 查询邮件规则列表（分页）
    *
    * @param page 页码
    * @param limit 每页数量
    * @param status 状态筛选（可选）
-   * @returns 邮件列表
+   * @returns 邮件规则列表
+   *
+   * 注意: 只返回规则 (is_rule = true),不返回实例
    */
   async findAll(page: number = 1, limit: number = 10, status?: string): Promise<{
     data: EmailResponseDto[];
@@ -111,12 +157,12 @@ export class EmailService {
     page: number;
     limit: number;
   }> {
-    this.logger.log(`查询邮件列表，页码: ${page}, 每页: ${limit}, 状态: ${status || '全部'}`);
+    this.logger.log(`查询邮件规则列表，页码: ${page}, 每页: ${limit}, 状态: ${status || '全部'}`);
 
     const skip = (page - 1) * limit;
 
-    // 构建查询条件
-    const where: any = {};
+    // 构建查询条件 - 只查询规则
+    const where: any = { is_rule: true };
     if (status) {
       where.status = status;
     }
@@ -222,7 +268,8 @@ export class EmailService {
     email.week_day = updateEmailDto.week_day || null;
     email.include_weather = includeWeather;
     email.weather_city = updateEmailDto.weather_city || null;
-
+    email.template_id = updateEmailDto.template_id || null;
+    email.template_category = updateEmailDto.template_category || null;
     // 保存更新
     const updated = await this.emailRepository.save(email);
 
@@ -232,19 +279,107 @@ export class EmailService {
   }
 
   /**
-   * 获取待发送的邮件
+   * 获取所有活跃的邮件规则
    *
-   * 此方法供定时任务调用
+   * 此方法供调度器使用
    *
-   * 查询条件：
-   * 1. 状态为 PENDING 或 RETRYING
-   * 2. 发送时间 <= 当前时间
-   * 3. 重试次数 < 3（在重试逻辑中处理）
+   * @returns 所有活跃的邮件规则 (is_rule = true)
+   */
+  async getActiveRules(): Promise<ScheduledEmail[]> {
+    this.logger.debug('扫描活跃的邮件规则...');
+
+    const rules = await this.emailRepository.find({
+      where: { is_rule: true },
+      order: { created_at: 'ASC' },
+    });
+
+    return rules;
+  }
+
+  /**
+   * 创建邮件发送实例
+   *
+   * 此方法供调度器使用
+   *
+   * @param rule 邮件规则
+   * @param sendTime 实际发送时间
+   * @returns 创建的邮件实例
+   */
+  async createEmailInstance(rule: ScheduledEmail, sendTime: Date): Promise<ScheduledEmail> {
+    this.logger.log(`创建邮件实例，规则ID: ${rule.id}, 发送时间: ${sendTime.toISOString()}`);
+
+    const instance = this.emailRepository.create({
+      to_email: rule.to_email,
+      subject: rule.subject,
+      content: rule.content,
+      send_time: sendTime,
+      status: EmailStatus.PENDING,
+      retry_count: 0,
+      frequency: rule.frequency, // 继承规则的频率
+      week_day: rule.week_day,
+      parent_id: rule.id, // 指向规则ID
+      is_rule: false, // 标记为实例
+      include_weather: rule.include_weather,
+      weather_city: rule.weather_city,
+      anniversary_month: rule.anniversary_month,
+      anniversary_day: rule.anniversary_day,
+    });
+
+    const saved = await this.emailRepository.save(instance);
+
+    this.logger.log(`邮件实例创建成功，ID: ${saved.id}`);
+
+    return saved;
+  }
+
+  /**
+   * 发送成功后更新规则状态
+   *
+   * 此方法供调度器使用
+   *
+   * @param ruleId 规则ID
+   * @param sentTime 发送时间
+   */
+  async updateRuleAfterSent(ruleId: number, sentTime: Date): Promise<void> {
+    this.logger.log(`更新规则状态，规则ID: ${ruleId}`);
+
+    const rule = await this.emailRepository.findOne({ where: { id: ruleId } });
+
+    if (!rule) {
+      this.logger.warn(`规则不存在，ID: ${ruleId}`);
+      return;
+    }
+
+    // 更新最后发送时间
+    rule.last_sent_at = sentTime;
+
+    // 如果是单次任务,标记为完成
+    if (rule.frequency === ScheduleFrequency.ONCE) {
+      rule.status = EmailStatus.SENT;
+      rule.next_send_at = null;
+    } else {
+      // 周期性任务,计算下次发送时间
+      rule.next_send_at = this.calculateNextSendTime(rule);
+    }
+
+    await this.emailRepository.save(rule);
+
+    this.logger.log(
+      `规则状态更新成功，ID: ${ruleId}, 最后发送: ${sentTime.toISOString()}, 下次发送: ${rule.next_send_at?.toISOString() || '无'}`,
+    );
+  }
+
+  /**
+   * 获取待发送的邮件 (旧方法,保留兼容性)
+   *
+   * ⚠️ 已废弃: 调度器不再使用此方法,改用 getActiveRules
+   * 保留此方法是为了兼容可能存在的其他调用
    *
    * @returns 待发送的邮件列表
+   * @deprecated 使用 getActiveRules 替代
    */
   async getPendingEmails(): Promise<ScheduledEmail[]> {
-    this.logger.debug('扫描待发送的邮件任务...');
+    this.logger.warn('getPendingEmails 方法已废弃，请使用 getActiveRules 替代');
 
     const now = new Date();
 
@@ -252,20 +387,18 @@ export class EmailService {
     const emails = await this.emailRepository.find({
       where: [
         {
+          is_rule: false, // 只查询实例
           status: EmailStatus.PENDING,
-          send_time: LessThanOrEqual(now) as any, // 修改为 <=
+          send_time: LessThanOrEqual(now) as any,
         },
         {
+          is_rule: false,
           status: EmailStatus.RETRYING,
-          send_time: LessThanOrEqual(now) as any, // 修改为 <=
+          send_time: LessThanOrEqual(now) as any,
         },
       ],
-      order: { send_time: 'ASC' }, // 按发送时间升序，先处理早的任务
+      order: { send_time: 'ASC' },
     });
-
-    if (emails.length > 0) {
-      this.logger.log(`找到 ${emails.length} 个待发送的邮件任务`);
-    }
 
     return emails;
   }
@@ -273,10 +406,12 @@ export class EmailService {
   /**
    * 发送邮件
    *
-   * 此方法供定时任务调用
+   * 此方法供调度器调用,用于发送邮件实例
    *
-   * @param email 邮件实体
+   * @param email 邮件实例
    * @returns 是否发送成功
+   *
+   * 注意: 不再调用 scheduleNextEmail,由调度器负责创建下一次实例
    */
   async sendEmail(email: ScheduledEmail): Promise<boolean> {
     this.logger.log(`开始发送邮件，ID: ${email.id}, 收件人: ${email.to_email}`);
@@ -297,7 +432,6 @@ export class EmailService {
           const weatherHTML = this.weatherService.generateWeatherHTML(weatherData);
 
           // 将天气信息插入到邮件内容中
-          // 方式1：插入到内容开头
           emailContent = weatherHTML + emailContent;
 
           this.logger.log(`成功将天气信息添加到邮件中，ID: ${email.id}`);
@@ -329,8 +463,8 @@ export class EmailService {
 
       this.logger.log(`邮件发送成功，ID: ${email.id}, 频率: ${email.frequency}`);
 
-      // 如果是周期性任务，创建下一次任务
-      await this.scheduleNextEmail(email);
+      // ❌ 移除链式创建逻辑 - 不再调用 scheduleNextEmail
+      // ✅ 新架构: 由调度器负责判断和创建下一次实例
 
       return true;
     } catch (error) {
@@ -354,94 +488,66 @@ export class EmailService {
   }
 
   /**
-   * 创建下一次周期性任务
+   * 计算下次发送时间
    *
-   * @param sentEmail 已发送的邮件
-   */
-  async scheduleNextEmail(sentEmail: ScheduledEmail): Promise<void> {
-    // 单次任务不需要创建下一次任务
-    if (sentEmail.frequency === ScheduleFrequency.ONCE) {
-      this.logger.debug(`单次任务，不创建下一次任务，ID: ${sentEmail.id}`);
-      return;
-    }
-
-    // 如果是子任务（parent_id 不为空），不创建新的周期性任务
-    // 只由父任务创建下一次任务
-    if (sentEmail.parent_id !== null) {
-      this.logger.debug(`子任务，不创建下一次任务，ID: ${sentEmail.id}`);
-      return;
-    }
-
-    const nextSendTime = this.calculateNextSendTime(sentEmail);
-
-    if (!nextSendTime) {
-      this.logger.warn(`无法计算下一次发送时间，ID: ${sentEmail.id}`);
-      return;
-    }
-
-    // 创建下一次任务
-    const nextEmail = this.emailRepository.create({
-      to_email: sentEmail.to_email,
-      subject: sentEmail.subject,
-      content: sentEmail.content,
-      send_time: nextSendTime,
-      status: EmailStatus.PENDING,
-      retry_count: 0,
-      frequency: sentEmail.frequency,
-      week_day: sentEmail.week_day,
-      parent_id: sentEmail.id, // 关联父任务
-      include_weather: sentEmail.include_weather,
-      weather_city: sentEmail.weather_city,
-    });
-
-    await this.emailRepository.save(nextEmail);
-
-    this.logger.log(
-      `已创建下一次任务，父任务ID: ${sentEmail.id}, 新任务ID: ${nextEmail.id}, 下次发送时间: ${nextSendTime.toISOString()}`,
-    );
-  }
-
-  /**
-   * 计算下一次发送时间
+   * @param rule 邮件规则
+   * @returns 下次发送时间
    *
-   * @param email 邮件实体
-   * @returns 下一次发送时间
+   * 注意: 此方法用于计算 next_send_at,不用于创建实例
    */
-  private calculateNextSendTime(email: ScheduledEmail): Date | null {
-    const currentSendTime = new Date(email.send_time);
+  private calculateNextSendTime(rule: ScheduledEmail): Date | null {
+    const now = new Date();
 
-    if (email.frequency === ScheduleFrequency.DAILY) {
-      // 每天任务：加一天
-      const nextTime = new Date(currentSendTime);
-      nextTime.setDate(nextTime.getDate() + 1);
-      return nextTime;
+    switch (rule.frequency) {
+      case ScheduleFrequency.ONCE:
+        // 单次任务: 返回配置的发送时间
+        return rule.send_time;
+
+      case ScheduleFrequency.HOURLY:
+        // 每小时: 下一小时的第X分钟
+        const nextHour = new Date(now);
+        nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+        if (rule.send_time) {
+          const targetMinute = new Date(rule.send_time).getMinutes();
+          nextHour.setMinutes(targetMinute);
+        }
+        return nextHour;
+
+      case ScheduleFrequency.DAILY:
+        // 每天: 明天的同一时间
+        const nextDay = new Date(now);
+        nextDay.setDate(now.getDate() + 1);
+        if (rule.send_time) {
+          const targetTime = new Date(rule.send_time);
+          nextDay.setHours(targetTime.getHours(), targetTime.getMinutes(), 0, 0);
+        }
+        return nextDay;
+
+      case ScheduleFrequency.WEEKLY:
+        // 每周: 下周的星期几
+        const nextWeek = new Date(now);
+        nextWeek.setDate(now.getDate() + 7);
+        if (rule.send_time) {
+          const targetTime = new Date(rule.send_time);
+          nextWeek.setHours(targetTime.getHours(), targetTime.getMinutes(), 0, 0);
+        }
+        return nextWeek;
+
+      case ScheduleFrequency.ANNIVERSARY:
+        // 纪念日: 下一年的同月同日
+        const nextYear = new Date(now);
+        nextYear.setFullYear(now.getFullYear() + 1);
+        nextYear.setMonth(rule.anniversary_month! - 1);
+        nextYear.setDate(rule.anniversary_day!);
+        if (rule.send_time) {
+          const targetTime = new Date(rule.send_time);
+          nextYear.setHours(targetTime.getHours(), targetTime.getMinutes(), 0, 0);
+        }
+        return nextYear;
+
+      default:
+        return null;
     }
-
-    if (email.frequency === ScheduleFrequency.WEEKLY && email.week_day) {
-      // 每周任务：找到下一个指定星期几
-      const nextTime = new Date(currentSendTime);
-      nextTime.setDate(nextTime.getDate() + 1); // 从明天开始查找
-
-      // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-      // 我们使用 1 = Monday, ..., 7 = Sunday
-      const targetDay = email.week_day === 7 ? 0 : email.week_day;
-
-      // 找到下一个目标星期几
-      while (nextTime.getDay() !== targetDay) {
-        nextTime.setDate(nextTime.getDate() + 1);
-      }
-
-      // 保持相同的时间
-      nextTime.setHours(
-        currentSendTime.getHours(),
-        currentSendTime.getMinutes(),
-        currentSendTime.getSeconds(),
-      );
-
-      return nextTime;
-    }
-
-    return null;
   }
 
   /**
@@ -530,8 +636,15 @@ export class EmailService {
       parent_id: email.parent_id,
       include_weather: email.include_weather,
       weather_city: email.weather_city,
+      is_rule: email.is_rule,
+      last_sent_at: email.last_sent_at,
+      next_send_at: email.next_send_at,
+      anniversary_month: email.anniversary_month,
+      anniversary_day: email.anniversary_day,
       created_at: email.created_at,
       updated_at: email.updated_at,
+      template_category: email.template_category,
+      template_id: email.template_id,
     };
   }
 }

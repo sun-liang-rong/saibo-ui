@@ -5,7 +5,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
  * 邮件响应 DTO
  *
  * 用于返回邮件数据给前端
- * 不包含敏感信息，只包含必要的业务数据
+ * 包含规则和实例的所有字段
  */
 export class EmailResponseDto {
   @ApiProperty({
@@ -33,7 +33,7 @@ export class EmailResponseDto {
   content: string;
 
   @ApiProperty({
-    description: '定时发送时间',
+    description: '发送时间 (规则存配置时间,实例存实际发送时间)',
     example: '2024-12-31T10:30:00Z',
   })
   send_time: Date;
@@ -51,17 +51,15 @@ export class EmailResponseDto {
   })
   retry_count: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: '错误信息',
     example: 'SMTP connection timeout',
-    required: false,
   })
   error_message: string | null;
 
-  @ApiProperty({
-    description: '实际发送时间',
+  @ApiPropertyOptional({
+    description: '实际发送时间 (仅实例使用)',
     example: '2024-12-31T10:30:05Z',
-    required: false,
   })
   sent_at: Date | null;
 
@@ -79,10 +77,40 @@ export class EmailResponseDto {
   week_day: number | null;
 
   @ApiPropertyOptional({
-    description: '父任务 ID',
+    description: '父规则ID (实例指向规则,规则为null)',
     example: 1,
   })
   parent_id: number | null;
+
+  @ApiProperty({
+    description: '是否为规则记录 (true=规则, false=实例)',
+    example: true,
+  })
+  is_rule: boolean;
+
+  @ApiPropertyOptional({
+    description: '最后发送时间 (仅规则使用,防重复发送)',
+    example: '2024-12-31T10:30:05Z',
+  })
+  last_sent_at: Date | null;
+
+  @ApiPropertyOptional({
+    description: '下次预计发送时间 (仅规则使用)',
+    example: '2025-01-01T10:30:00Z',
+  })
+  next_send_at: Date | null;
+
+  @ApiPropertyOptional({
+    description: '纪念日月份 (1-12, 仅anniversary频率使用)',
+    example: 5,
+  })
+  anniversary_month: number | null;
+
+  @ApiPropertyOptional({
+    description: '纪念日日期 (1-31, 仅anniversary频率使用)',
+    example: 20,
+  })
+  anniversary_day: number | null;
 
   @ApiProperty({
     description: '是否包含今日天气信息',
@@ -95,6 +123,18 @@ export class EmailResponseDto {
     example: '北京',
   })
   weather_city: string | null;
+
+  @ApiPropertyOptional({
+    description: '模板分类',
+    example: 'greeting',
+  })
+  template_category: string | null;
+
+  @ApiPropertyOptional({
+    description: '模板ID (用于标识使用了哪个模板)',
+    example: '1',
+  })
+  template_id: string | null;
 
   @ApiProperty({
     description: '创建时间',

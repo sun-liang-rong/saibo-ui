@@ -243,11 +243,33 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
   useEffect(() => {
     if (visible) {
       if (editData) {
-        // 编辑模式：设置值（自动转 dayjs 如果有日期字段）
-        form.setFieldsValue({
-          ...editData,
-          send_time: editData.send_time ? dayjs(editData.send_time) : null,
-        });
+        // 编辑模式：设置值
+        // 注意：只设置表单需要的字段，避免传入不需要的后端字段
+        const formData = {
+          to_email: editData.to_email || '',
+          subject: editData.subject || '',
+          content: editData.content || '',
+          send_time: editData.send_time ? dayjs(editData.send_time) : getDefaultSendTime(),
+          frequency: editData.frequency || 'once',
+          week_day: editData.week_day || undefined,
+          anniversary_month: editData.anniversary_month || undefined,
+          anniversary_day: editData.anniversary_day || undefined,
+          include_weather: editData.include_weather || false,
+          weather_city: editData.weather_city || '',
+          template_category: editData.template_category || undefined,
+          template_id: editData.template_id || undefined,
+        };
+        if (editData.template_category) {
+          setSelectedCategory(editData.template_category);
+          if (editData.template_id) {
+            setSelectedTemplate(editData.template_id);
+
+          }
+        }
+        form.setFieldsValue(formData);
+        // 同步模板选择状态
+        console.log('编辑模式数据:', editData);
+        console.log('表单设置数据:', formData);
       } else {
         // 新建模式：重置表单并设置默认值
         form.resetFields();
@@ -258,13 +280,18 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
           send_time: getDefaultSendTime(),
           frequency: 'once',
           week_day: undefined,
+          anniversary_month: undefined,
+          anniversary_day: undefined,
           include_weather: false,
           weather_city: '',
+          template_category: undefined,
+          template_id: undefined,
         });
+        // 重置分类选择和模板选择
+        setSelectedCategory(null);
+        setSelectedTemplate(null);
       }
-      // 重置分类选择和模板选择
-      setSelectedCategory(null);
-      setSelectedTemplate(null);
+
     }
   }, [visible, editData, form]);
   /**
@@ -272,6 +299,8 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
    */
   const resetForm = () => {
     form.resetFields();
+    setSelectedCategory(null);
+    setSelectedTemplate(null);
   };
 
   /**
@@ -287,7 +316,7 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
       // 格式化发送时间为 ISO 8601 格式
       // 后端要求的格式：yyyy-MM-ddTHH:mm:ssZ
       const sendTime = values.send_time.format('YYYY-MM-DDTHH:mm:ssZ');
-
+      console.log(selectedCategory, selectedTemplate, 'selectedTemplate-------')
       // 构建请求数据
       const data = {
         to_email: values.to_email,
@@ -296,8 +325,12 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
         send_time: sendTime,
         frequency: values.frequency || 'once',
         week_day: values.week_day || null,
+        anniversary_month: values.anniversary_month || null,
+        anniversary_day: values.anniversary_day || null,
         include_weather: values.include_weather || false,
         weather_city: values.include_weather ? values.weather_city : null,
+        template_category: selectedCategory || null,
+        template_id: selectedTemplate || null,
       };
 
       // 调用 API 创建或更新邮件任务
@@ -398,6 +431,7 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
               size="large"
               allowClear
               onChange={(value) => {
+                console.log('选择模版分类', value)
                 setSelectedCategory(value);
                 // 切换分类时清除已选择的模板
                 setSelectedTemplate(null);
@@ -491,11 +525,11 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
         <Form.Item label="邮件预览">
           <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => {
             return prevValues.to_email !== currentValues.to_email ||
-                   prevValues.subject !== currentValues.subject ||
-                   prevValues.content !== currentValues.content ||
-                   prevValues.send_time !== currentValues.send_time ||
-                   prevValues.include_weather !== currentValues.include_weather ||
-                   prevValues.weather_city !== currentValues.weather_city;
+              prevValues.subject !== currentValues.subject ||
+              prevValues.content !== currentValues.content ||
+              prevValues.send_time !== currentValues.send_time ||
+              prevValues.include_weather !== currentValues.include_weather ||
+              prevValues.weather_city !== currentValues.weather_city;
           }}>
             {({ getFieldValue }) => {
               const toEmail = getFieldValue('to_email');
@@ -529,15 +563,21 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
             placeholder="请选择调度频率"
             size="large"
             onChange={(value) => {
-              // 当频率改变时，重置星期几字段
+              // 当频率改变时，重置相关字段
               if (value !== 'weekly') {
                 form.setFieldValue('week_day', undefined);
+              }
+              if (value !== 'anniversary') {
+                form.setFieldValue('anniversary_month', undefined);
+                form.setFieldValue('anniversary_day', undefined);
               }
             }}
           >
             <Select.Option value="once">单次发送</Select.Option>
+            <Select.Option value="hourly">每小时发送</Select.Option>
             <Select.Option value="daily">每天发送</Select.Option>
             <Select.Option value="weekly">每周发送</Select.Option>
+            <Select.Option value="anniversary">每年纪念日发送</Select.Option>
           </Select>
         </Form.Item>
 
@@ -563,6 +603,56 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
                   <Select.Option value={7}>星期日</Select.Option>
                 </Select>
               </Form.Item>
+            ) : null
+          }
+        </Form.Item>
+
+        {/* 纪念日（仅当选择纪念日时显示） */}
+        <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.frequency !== currentValues.frequency}>
+          {({ getFieldValue }) =>
+            getFieldValue('frequency') === 'anniversary' ? (
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Form.Item
+                  label="纪念日月份"
+                  name="anniversary_month"
+                  rules={[{ required: true, message: '请选择纪念日月份' }]}
+                  style={{ marginBottom: 8 }}
+                >
+                  <Select
+                    placeholder="请选择月份"
+                    size="large"
+                  >
+                    <Select.Option value={1}>1月</Select.Option>
+                    <Select.Option value={2}>2月</Select.Option>
+                    <Select.Option value={3}>3月</Select.Option>
+                    <Select.Option value={4}>4月</Select.Option>
+                    <Select.Option value={5}>5月</Select.Option>
+                    <Select.Option value={6}>6月</Select.Option>
+                    <Select.Option value={7}>7月</Select.Option>
+                    <Select.Option value={8}>8月</Select.Option>
+                    <Select.Option value={9}>9月</Select.Option>
+                    <Select.Option value={10}>10月</Select.Option>
+                    <Select.Option value={11}>11月</Select.Option>
+                    <Select.Option value={12}>12月</Select.Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item
+                  label="纪念日日期"
+                  name="anniversary_day"
+                  rules={[{ required: true, message: '请选择纪念日日期' }]}
+                >
+                  <Select
+                    placeholder="请选择日期"
+                    size="large"
+                  >
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <Select.Option key={i + 1} value={i + 1}>
+                        {i + 1}日
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Space>
             ) : null
           }
         </Form.Item>

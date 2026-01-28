@@ -1,24 +1,11 @@
-import { IsEmail, IsNotEmpty, IsString, IsDateString, MaxLength, IsOptional, IsEnum, IsInt, Min, Max } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, IsDateString, MaxLength, IsOptional, IsEnum, IsInt, Min, Max, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ScheduleFrequency } from '../entities/scheduled-email.entity';
 
 /**
- * 创建定时邮件任务的 DTO
+ * 创建邮件规则的 DTO
  *
- * 使用 class-validator 进行数据验证：
- * - IsNotEmpty: 不能为空
- * - IsEmail: 必须是有效的邮箱格式
- * - IsString: 必须是字符串
- * - IsDateString: 必须是有效的日期格式
- * - MaxLength: 最大长度限制
- * - IsEnum: 必须是指定的枚举值
- * - IsInt: 必须是整数
- *
- * 为什么使用装饰器验证：
- * 1. 声明式验证，代码清晰
- * 2. 自动验证，在 Controller 层自动触发
- * 3. 错误信息自动返回，无需手动处理
- * 4. 支持 Swagger 自动生成 API 文档
+ * 使用 class-validator 进行数据验证
  */
 export class CreateEmailDto {
   @ApiProperty({
@@ -47,13 +34,13 @@ export class CreateEmailDto {
   @IsNotEmpty({ message: '邮件内容不能为空' })
   content: string;
 
-  @ApiProperty({
-    description: '定时发送时间（ISO 8601 格式）',
+  @ApiPropertyOptional({
+    description: '发送时间配置 (ISO 8601 格式)',
     example: '2024-12-31T10:30:00Z',
   })
+  @IsOptional()
   @IsDateString({}, { message: '请输入有效的日期时间格式' })
-  @IsNotEmpty({ message: '发送时间不能为空' })
-  send_time: string;
+  send_time?: string;
 
   @ApiPropertyOptional({
     description: '调度频率',
@@ -62,7 +49,7 @@ export class CreateEmailDto {
     default: ScheduleFrequency.ONCE,
   })
   @IsOptional()
-  @IsEnum(ScheduleFrequency, { message: '调度频率必须是 once、daily 或 weekly' })
+  @IsEnum(ScheduleFrequency, { message: '调度频率必须是 once、hourly、daily、weekly 或 anniversary' })
   frequency?: ScheduleFrequency;
 
   @ApiPropertyOptional({
@@ -78,12 +65,28 @@ export class CreateEmailDto {
   week_day?: number;
 
   @ApiPropertyOptional({
-    description: '父任务 ID（用于周期性任务）',
-    example: 1,
+    description: '纪念日月份 (1-12, 仅当 frequency 为 anniversary 时有效)',
+    example: 5,
+    minimum: 1,
+    maximum: 12,
   })
   @IsOptional()
-  @IsInt({ message: '父任务 ID 必须是整数' })
-  parent_id?: number;
+  @IsInt({ message: '纪念日月份必须是整数' })
+  @Min(1, { message: '纪念日月份必须在 1-12 之间' })
+  @Max(12, { message: '纪念日月份必须在 1-12 之间' })
+  anniversary_month?: number;
+
+  @ApiPropertyOptional({
+    description: '纪念日日期 (1-31, 仅当 frequency 为 anniversary 时有效)',
+    example: 20,
+    minimum: 1,
+    maximum: 31,
+  })
+  @IsOptional()
+  @IsInt({ message: '纪念日日期必须是整数' })
+  @Min(1, { message: '纪念日日期必须在 1-31 之间' })
+  @Max(31, { message: '纪念日日期必须在 1-31 之间' })
+  anniversary_day?: number;
 
   @ApiPropertyOptional({
     description: '是否包含今日天气信息',
@@ -91,6 +94,7 @@ export class CreateEmailDto {
     default: false,
   })
   @IsOptional()
+  @IsBoolean({ message: '是否包含天气必须是布尔值' })
   include_weather?: boolean;
 
   @ApiPropertyOptional({
@@ -98,7 +102,25 @@ export class CreateEmailDto {
     example: '北京',
   })
   @IsOptional()
+  @IsString()
   weather_city?: string;
+
+  @ApiPropertyOptional({
+    description: '模板分类（如: greeting, birthday, reminder 等）',
+    example: 'greeting',
+  })
+  @IsOptional()
+  @IsString({ message: '模板分类必须是字符串' })
+  @MaxLength(50, { message: '模板分类不能超过50个字符' })
+  template_category?: string;
+
+  @ApiPropertyOptional({
+    description: '模板ID (用于标识使用了哪个模板)',
+    example: 1,
+  })
+  @IsOptional()
+  @IsString({ message: '模板ID必须是字符串' })
+  template_id?: string;
 }
 
 /**

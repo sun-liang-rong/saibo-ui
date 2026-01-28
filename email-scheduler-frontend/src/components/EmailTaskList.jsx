@@ -43,15 +43,19 @@ import EmailDetailModal from './EmailDetailModal';
 // 频率文本映射
 const frequencyText = {
   once: '单次',
+  hourly: '每小时',
   daily: '每天',
   weekly: '每周',
+  anniversary: '纪念日',
 };
 
 // 频率颜色映射
 const frequencyColor = {
   once: 'default',
+  hourly: 'cyan',
   daily: 'blue',
   weekly: 'green',
+  anniversary: 'purple',
 };
 
 // 星期文本映射
@@ -303,6 +307,10 @@ const EmailTaskList = () => {
 
         if (frequency === 'weekly' && record.week_day) {
           fullText = `${text} ${weekDayText[record.week_day]}`;
+        }
+
+        if (frequency === 'anniversary' && record.anniversary_month && record.anniversary_day) {
+          fullText = `${text} ${record.anniversary_month}月${record.anniversary_day}日`;
         }
 
         if (record.parent_id) {
