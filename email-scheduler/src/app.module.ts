@@ -43,6 +43,9 @@ import { AuthModule } from './modules/auth/auth.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // 自动扫描实体
         synchronize: configService.get('NODE_ENV') === 'development', // 开发环境自动同步表结构
         logging: configService.get('NODE_ENV') === 'development', // 开发环境打印 SQL 日志
+        // 🔧 时区配置: 强制使用 UTC 存储
+        timezone: '+00:00',
+        serverTimezone: '+00:00',
       }),
     }),
 

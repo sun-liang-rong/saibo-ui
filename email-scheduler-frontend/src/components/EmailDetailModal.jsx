@@ -1,6 +1,12 @@
 import React from 'react';
-import { Modal, Descriptions, Tag, Badge } from 'antd';
+import { Modal, Descriptions, Tag, Badge, Tooltip } from 'antd';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// 扩展 dayjs 支持时区
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import { formatEmailStatus, getStatusColor } from '../services/emailService';
 
 /**
@@ -55,7 +61,9 @@ const EmailDetailModal = ({ visible, data, onCancel }) => {
 
         {/* 时间信息 */}
         <Descriptions.Item label="发送时间">
-          {dayjs(data.send_time).format('YYYY-MM-DD HH:mm:ss')}
+          <Tooltip title={dayjs(data.send_time).format('YYYY-MM-DD HH:mm:ss [UTC]')}>
+            {dayjs.utc(data.send_time).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}
+          </Tooltip>
         </Descriptions.Item>
 
         <Descriptions.Item label="状态">
@@ -67,7 +75,9 @@ const EmailDetailModal = ({ visible, data, onCancel }) => {
         {/* 实际发送时间 */}
         {data.sent_at && (
           <Descriptions.Item label="实际发送时间" span={2}>
-            {dayjs(data.sent_at).format('YYYY-MM-DD HH:mm:ss')}
+            <Tooltip title={dayjs(data.sent_at).format('YYYY-MM-DD HH:mm:ss [UTC]')}>
+              {dayjs.utc(data.sent_at).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}
+            </Tooltip>
           </Descriptions.Item>
         )}
 

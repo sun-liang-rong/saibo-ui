@@ -45,9 +45,13 @@ export class ScheduleTaskService {
    */
   @Cron(CronExpression.EVERY_MINUTE, {
     name: 'scheduledEmails',
-    timeZone: 'Asia/Shanghai',
+    timeZone: 'UTC', // 🔧 改为 UTC,与数据库存储时区一致
   })
   async handleScheduledEmails() {
+    this.handlerSendEmails()
+  }
+
+  async handlerSendEmails() {
     // 记录当前执行时间,便于日志追踪
     const now = new Date();
     this.logger.log(`[${now.toLocaleString('zh-CN')}] 开始扫描邮件规则...`);

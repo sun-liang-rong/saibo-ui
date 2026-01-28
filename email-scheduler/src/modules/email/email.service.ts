@@ -6,6 +6,10 @@ import { CreateEmailDto } from './dto/create-email.dto';
 import { EmailResponseDto } from './dto/email-response.dto';
 import { MailService } from './mail.service';
 import { WeatherService } from '../weather/weather.service';
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+
 
 /**
  * 邮件服务
@@ -29,7 +33,12 @@ export class EmailService {
     private emailRepository: Repository<ScheduledEmail>,
     private mailService: MailService,
     private weatherService: WeatherService,
-  ) {}
+  ) {
+    console.log(dayjs); // 确认 dayjs 已经是函数
+    // 扩展 dayjs 支持时区
+    dayjs.extend(utc);
+    dayjs.extend(timezone);
+  }
 
   /**
    * 创建邮件规则
@@ -47,8 +56,17 @@ export class EmailService {
   async create(createEmailDto: CreateEmailDto): Promise<EmailResponseDto> {
     this.logger.log(`创建新的邮件规则: ${createEmailDto.to_email}`);
 
-    // 将字符串时间转换为 Date 对象
-    const sendTime = createEmailDto.send_time ? new Date(createEmailDto.send_time) : null;
+    // 🔧 时区转换: 将前端发送的时间转换为中国时区,然后转换为 UTC 存储
+    let sendTime: Date | null = null;
+    if (createEmailDto.send_time) {
+      // 前端发送格式: 2024-12-31T10:30:00+08:00 (中国时区)
+      // 解析为中国时区,然后转换为 UTC 存储
+      sendTime = dayjs.tz(createEmailDto.send_time, 'Asia/Shanghai').toDate();
+
+      this.logger.log(
+        `📅 时区转换 - 原始输入: ${createEmailDto.send_time}, 存储(UTC): ${sendTime.toISOString()}`,
+      );
+    }
 
     // 验证周期性任务参数
     const frequency = createEmailDto.frequency || ScheduleFrequency.ONCE;

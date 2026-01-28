@@ -29,6 +29,12 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// 扩展 dayjs 支持时区
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import {
   getEmailTasks,
   deleteEmailTask,
@@ -330,7 +336,16 @@ const EmailTaskList = () => {
       dataIndex: 'send_time',
       key: 'send_time',
       width: 180,
-      render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm'),
+      render: (text) => {
+        // 🔧 将数据库的 UTC 时间转换为中国时区显示
+        const chinaTime = dayjs.utc(text).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm');
+        const utcTime = dayjs(text).format('YYYY-MM-DD HH:mm [UTC]');
+        return (
+          <Tooltip title={utcTime}>
+            <span>{chinaTime}</span>
+          </Tooltip>
+        );
+      },
       sorter: (a, b) => dayjs(a.send_time).unix() - dayjs(b.send_time).unix(),
     },
     {
