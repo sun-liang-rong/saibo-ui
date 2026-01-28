@@ -1,13 +1,14 @@
 /* ==================== ProLayout 布局样式 - 现代简洁风格 ==================== */
 
 .pro-layout {
-  min-height: 100vh;
+  height: 100vh;
   background: #f0f2f5;
 }
 
 /* ==================== 侧边栏样式 ==================== */
 
 .pro-layout-sider-collapsed .pro-sider {  
+  height: 100vh;
   width: 64px !important;
 }
 
@@ -193,6 +194,7 @@
 /* ==================== 响应式设计 ==================== */
 @media (max-width: 991px) {
   .pro-sider {
+    height: 100vh;
     position: fixed;
     left: -256px;
     transition: left 0.2s;
