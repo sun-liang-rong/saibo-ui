@@ -57,9 +57,7 @@ export class ScheduleTaskService {
     this.logger.log(`[${now.toLocaleString('zh-CN')}] 开始扫描邮件规则...`);
 
     try {
-      // ============================================================
       // 第一步: 获取所有活跃的邮件规则
-      // ============================================================
       // 查询条件: is_rule = true (只要规则,不要实例)
       //           status != 'sent' (只要活跃规则,已完成的单次规则除外)
       const rules = await this.emailService.getActiveRules();
@@ -71,23 +69,15 @@ export class ScheduleTaskService {
       }
 
       this.logger.log(`找到 ${rules.length} 条邮件规则`);
-
-      // ============================================================
       // 第二步: 初始化统计计数器
-      // ============================================================
       let triggeredCount = 0;  // 触发发送的规则数
       let skippedCount = 0;    // 跳过的规则数 (时间未到或已发送)
       let successCount = 0;    // 发送成功数
       let failCount = 0;       // 发送失败数
-
-      // ============================================================
       // 第三步: 遍历所有规则,逐个判断并处理
-      // ============================================================
       for (const rule of rules) {
         try {
-          // --------------------------------------------------------
           // 3.1 判断是否应该在当前时间发送
-          // --------------------------------------------------------
           // 根据规则频率 (每小时/每天/每周/纪念日) 判断当前时间是否匹配
           const shouldSend = this.shouldSendEmail(rule, now);
 
@@ -96,10 +86,7 @@ export class ScheduleTaskService {
             skippedCount++;
             continue;
           }
-
-          // --------------------------------------------------------
           // 3.2 防重复发送检查
-          // --------------------------------------------------------
           // 检查该规则在本周期内是否已发送过
           // 例如: 每天任务在今天已发送过,则跳过
           if (this.isAlreadySent(rule, now)) {
@@ -107,10 +94,7 @@ export class ScheduleTaskService {
             skippedCount++;
             continue;
           }
-
-          // --------------------------------------------------------
           // 3.3 创建实例并执行发送
-          // --------------------------------------------------------
           triggeredCount++;
           this.logger.log(
             `规则触发发送，ID: ${rule.id}, 收件人: ${rule.to_email}, 频率: ${rule.frequency}`,
@@ -125,9 +109,7 @@ export class ScheduleTaskService {
             failCount++;
           }
         } catch (error) {
-          // --------------------------------------------------------
           // 3.4 错误处理
-          // --------------------------------------------------------
           // 单条规则失败不影响其他规则,记录错误并继续
           this.logger.error(
             `处理规则失败，ID: ${rule.id}, 错误: ${error.message}`,
@@ -136,10 +118,7 @@ export class ScheduleTaskService {
           failCount++;
         }
       }
-
-      // ============================================================
       // 第四步: 输出统计结果
-      // ============================================================
       this.logger.log(
         `规则扫描完成，触发: ${triggeredCount}, 跳过: ${skippedCount}, 成功: ${successCount}, 失败: ${failCount}, 总计: ${rules.length}`,
       );
@@ -162,28 +141,20 @@ export class ScheduleTaskService {
    * @returns 发送是否成功
    */
   private async processRule(rule: ScheduledEmail, now: Date): Promise<boolean> {
-    // ============================================================
     // 第一步: 创建发送实例
-    // ============================================================
     // 实例记录特点:
     // - is_rule = false (标识这是实例,不是规则)
     // - parent_id = rule.id (指向父规则)
     // - send_time = now (实际发送时间)
     // - status = 'pending' (待发送状态)
     const instance = await this.emailService.createEmailInstance(rule, now);
-
-    // ============================================================
     // 第二步: 执行邮件发送
-    // ============================================================
     // 发送成功后会:
     // - 更新实例的 status = 'sent'
     // - 更新实例的 sent_at = now
     // - 如果发送失败,会更新 error_message 并进行重试
     const success = await this.emailService.sendEmail(instance);
-
-    // ============================================================
     // 第三步: 发送成功后更新规则状态
-    // ============================================================
     if (success) {
       // 更新规则:
       // - last_sent_at = now (记录最后发送时间,用于防重复)
