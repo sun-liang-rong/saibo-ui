@@ -73,12 +73,13 @@ export const updateEmailTask = async (id, data) => {
  * 接口：GET /emails?page=1&limit=10&status=pending
  */
 export const getEmailTasks = async (params = {}) => {
-  const { page = 1, limit = 10, status } = params;
+  const { page = 1, limit = 10, status, search } = params;
   return await api.get('/emails', {
     params: {
       page,
       limit,
       status,
+      search
     },
   });
 };

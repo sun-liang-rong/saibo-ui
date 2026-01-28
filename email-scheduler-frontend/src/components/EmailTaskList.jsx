@@ -120,11 +120,12 @@ const EmailTaskList = () => {
     const currentRequestId = ++requestIdRef.current;
     setLoading(true);
     try {
+      console.log(searchKeyword, 'searchKeyword')
       const response = await getEmailTasks({
         page,
         limit: pageSize,
         status: filters.status,
-        keyword: searchKeyword || undefined,
+        search: searchKeyword || undefined,
       });
 
       // 只有当这是最新的请求时才更新状态
@@ -431,7 +432,10 @@ const EmailTaskList = () => {
             placeholder="搜索标题、收件人..."
             prefix={<SearchOutlined />}
             value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
+            onChange={(e) => {
+              console.log(e.target.value)
+              setSearchKeyword(e.target.value)
+            }}
             onPressEnter={() => loadEmails(1)}
             style={{ width: 280 }}
             allowClear

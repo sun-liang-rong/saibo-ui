@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { ScheduledEmail, EmailStatus, ScheduleFrequency } from './entities/scheduled-email.entity';
 import { CreateEmailDto } from './dto/create-email.dto';
 import { EmailResponseDto } from './dto/email-response.dto';
@@ -84,7 +84,9 @@ export class EmailService {
     // 保存到数据库
     const saved = await this.emailRepository.save(email);
 
-    this.logger.log(`邮件规则创建成功，ID: ${saved.id}, 频率: ${frequency}, 下次发送: ${saved.next_send_at}`);
+    this.logger.log(
+      `邮件规则创建成功，ID: ${saved.id}, 频率: ${frequency}, 下次发送: ${saved.next_send_at}`,
+    );
 
     return this.toResponseDto(saved);
   }
@@ -152,20 +154,50 @@ export class EmailService {
    *
    * 注意: 只返回规则 (is_rule = true),不返回实例
    */
-  async findAll(page: number = 1, limit: number = 10, status?: string): Promise<{
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    status?: string,
+    search?: string,
+  ): Promise<{
     data: EmailResponseDto[];
     total: number;
     page: number;
     limit: number;
   }> {
-    this.logger.log(`查询邮件规则列表，页码: ${page}, 每页: ${limit}, 状态: ${status || '全部'}`);
+    this.logger.log(
+      `查询邮件规则列表，页码: ${page}, 每页: ${limit}, 状态: ${status || '全部'}, 搜索: ${search || '无'}`,
+    );
 
     const skip = (page - 1) * limit;
 
-    // 构建查询条件 - 只查询规则
-    const where: any = { is_rule: true };
+    // 基础条件（所有 OR 都要包含）
+    const baseWhere: any = {
+      is_rule: true,
+    };
+
+    // 状态条件
     if (status) {
-      where.status = status;
+      baseWhere.status = status;
+    }
+
+    // 最终 where
+    let where: any = baseWhere;
+
+    // 如果有搜索关键词 → OR
+    if (search && search.trim()) {
+      const keyword = `%${search.trim()}%`;
+
+      where = [
+        {
+          ...baseWhere,
+          to_email: Like(keyword),
+        },
+        {
+          ...baseWhere,
+          subject: Like(keyword),
+        },
+      ];
     }
 
     // 查询数据
@@ -177,7 +209,7 @@ export class EmailService {
     });
 
     return {
-      data: emails.map(email => this.toResponseDto(email)),
+      data: emails.map((email) => this.toResponseDto(email)),
       total,
       page,
       limit,
@@ -404,9 +436,7 @@ export class EmailService {
           this.logger.log(`成功将天气信息添加到邮件中，ID: ${email.id}`);
         } catch (weatherError) {
           // 天气获取失败时，记录警告但仍然发送邮件
-          this.logger.warn(
-            `获取天气信息失败，将发送原邮件内容。错误：${weatherError.message}`,
-          );
+          this.logger.warn(`获取天气信息失败，将发送原邮件内容。错误：${weatherError.message}`);
 
           // 在邮件内容中添加错误提示
           const errorHTML = `
@@ -524,7 +554,11 @@ export class EmailService {
    * @param status 新状态
    * @param errorMessage 错误信息（可选）
    */
-  async updateStatus(id: number, status: EmailStatus, errorMessage: string | null = null): Promise<void> {
+  async updateStatus(
+    id: number,
+    status: EmailStatus,
+    errorMessage: string | null = null,
+  ): Promise<void> {
     const updateData: Partial<ScheduledEmail> = {
       status,
     };

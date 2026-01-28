@@ -150,4 +150,12 @@ export class QueryEmailDto {
   })
   @IsOptional()
   status?: string;
+
+  @ApiPropertyOptional({
+    description: '搜索关键词 (同时搜索标题和收件人)',
+    example: 'test',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

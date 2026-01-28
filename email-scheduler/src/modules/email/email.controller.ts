@@ -103,6 +103,7 @@ export class EmailController {
         total: { type: 'number', example: 100 },
         page: { type: 'number', example: 1 },
         limit: { type: 'number', example: 10 },
+        search: { type: 'string', example: 'test' }
       },
     },
   })
@@ -115,8 +116,9 @@ export class EmailController {
     const page = query.page || 1;
     const limit = query.limit || 10;
     const status = query.status;
+    const search = query.search;
 
-    return await this.emailService.findAll(page, limit, status);
+    return await this.emailService.findAll(page, limit, status, search);
   }
 
   /**
