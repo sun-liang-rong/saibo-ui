@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://saibo-ui.vercel.app/:path*"
+      "destination": "http://156.226.28.65:3000/:path*"
     },
     {
       "source": "/(.*)",
