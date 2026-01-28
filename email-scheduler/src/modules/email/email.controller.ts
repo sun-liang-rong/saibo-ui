@@ -46,7 +46,6 @@ export class EmailController {
   @ApiOperation({ summary: '天气测试接口' })
   @ApiQuery({ name: 'city', required: true, description: '城市名称' })
   async weatherTest(@Query('city') city): Promise<any> {
-    console.log('city', city);
     return this.emailService.weatherTest(city);
   }
   /**

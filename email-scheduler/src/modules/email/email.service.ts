@@ -1,12 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ScheduledEmail, EmailStatus, ScheduleFrequency } from './entities/scheduled-email.entity';
 import { CreateEmailDto } from './dto/create-email.dto';
 import { EmailResponseDto } from './dto/email-response.dto';
 import { MailService } from './mail.service';
 import { WeatherService } from '../weather/weather.service';
-import e from 'express';
 
 /**
  * 邮件服务
@@ -75,6 +74,8 @@ export class EmailService {
       anniversary_day: createEmailDto.anniversary_day || null,
       last_sent_at: null,
       next_send_at: null, // 稍后计算
+      template_category: createEmailDto.template_category || null,
+      template_id: createEmailDto.template_id || null,
     });
 
     // 预计算下次发送时间
@@ -367,40 +368,6 @@ export class EmailService {
     this.logger.log(
       `规则状态更新成功，ID: ${ruleId}, 最后发送: ${sentTime.toISOString()}, 下次发送: ${rule.next_send_at?.toISOString() || '无'}`,
     );
-  }
-
-  /**
-   * 获取待发送的邮件 (旧方法,保留兼容性)
-   *
-   * ⚠️ 已废弃: 调度器不再使用此方法,改用 getActiveRules
-   * 保留此方法是为了兼容可能存在的其他调用
-   *
-   * @returns 待发送的邮件列表
-   * @deprecated 使用 getActiveRules 替代
-   */
-  async getPendingEmails(): Promise<ScheduledEmail[]> {
-    this.logger.warn('getPendingEmails 方法已废弃，请使用 getActiveRules 替代');
-
-    const now = new Date();
-
-    // 使用 TypeORM 的 LessThanOrEqual 查询
-    const emails = await this.emailRepository.find({
-      where: [
-        {
-          is_rule: false, // 只查询实例
-          status: EmailStatus.PENDING,
-          send_time: LessThanOrEqual(now) as any,
-        },
-        {
-          is_rule: false,
-          status: EmailStatus.RETRYING,
-          send_time: LessThanOrEqual(now) as any,
-        },
-      ],
-      order: { send_time: 'ASC' },
-    });
-
-    return emails;
   }
 
   /**

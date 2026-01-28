@@ -91,13 +91,11 @@ export class WeatherService {
       });
 
       const data = response.data.data;
-      console.log(data, 'data----------------');
       // 格式化返回数据
       const weatherData: WeatherData = {
         city: data.location.name, // 获取城市名称
         daily_forecast: data.daily_forecast,
       };
-      console.log(weatherData, 'weatherData----------------');
       this.logger.log(
         `成功获取 ${weatherData.city} 的天气：${weatherData.daily_forecast[1].day_condition}，温度 ${weatherData.daily_forecast[1].min_temperature - weatherData.daily_forecast[1].max_temperature}°C`,
       );

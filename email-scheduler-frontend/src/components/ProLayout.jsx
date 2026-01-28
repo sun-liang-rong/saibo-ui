@@ -110,7 +110,6 @@ const ProLayout = () => {
         className="pro-sider"
         width={256}
         collapsedWidth={64}
-        theme="light"
       >
         {/* Logo 区域 */}
         <div className="pro-logo">

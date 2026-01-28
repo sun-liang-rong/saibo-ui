@@ -259,21 +259,29 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
           template_category: editData.template_category || undefined,
           template_id: editData.template_id || undefined,
         };
+
+        // 先设置模板选择状态
         if (editData.template_category) {
           setSelectedCategory(editData.template_category);
           if (editData.template_id) {
             setSelectedTemplate(editData.template_id);
-
+          } else {
+            setSelectedTemplate(null);
           }
+        } else {
+          setSelectedCategory(null);
+          setSelectedTemplate(null);
         }
-        form.setFieldsValue(formData);
-        // 同步模板选择状态
-        console.log('编辑模式数据:', editData);
-        console.log('表单设置数据:', formData);
+
+        // 使用 setTimeout 确保表单已完全渲染后再设置值
+        // 这样可以避免第一次渲染时表单还没准备好导致的反显问题
+        setTimeout(() => {
+          form.setFieldsValue(formData);
+        }, 0);
       } else {
         // 新建模式：重置表单并设置默认值
         form.resetFields();
-        form.setFieldsValue({
+        const defaultFormData = {
           to_email: '',
           subject: '',
           content: '',
@@ -286,14 +294,15 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
           weather_city: '',
           template_category: undefined,
           template_id: undefined,
-        });
+        };
+        form.setFieldsValue(defaultFormData);
         // 重置分类选择和模板选择
         setSelectedCategory(null);
         setSelectedTemplate(null);
       }
-
     }
-  }, [visible, editData, form]);
+    // 移除 form 依赖,避免因为 form 引用变化导致的问题
+  }, [visible, editData]);
   /**
    * 重置表单
    */
@@ -316,7 +325,7 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
       // 格式化发送时间为 ISO 8601 格式
       // 后端要求的格式：yyyy-MM-ddTHH:mm:ssZ
       const sendTime = values.send_time.format('YYYY-MM-DDTHH:mm:ssZ');
-      console.log(selectedCategory, selectedTemplate, 'selectedTemplate-------')
+
       // 构建请求数据
       const data = {
         to_email: values.to_email,
@@ -419,6 +428,7 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
       ]}
     >
       <Form
+        key={editData ? `edit-${editData.id}` : 'create'}
         preserve={false}
         form={form}
         layout="vertical"
@@ -431,7 +441,6 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
               size="large"
               allowClear
               onChange={(value) => {
-                console.log('选择模版分类', value)
                 setSelectedCategory(value);
                 // 切换分类时清除已选择的模板
                 setSelectedTemplate(null);
@@ -499,7 +508,7 @@ const EmailTaskForm = ({ visible, onCancel, onSuccess, editData }) => {
           <Input
             type="search"
             name="subject"
-            autocomplete="off"
+            autoComplete="off"
             placeholder="请输入邮件标题"
             size="large"
           />
