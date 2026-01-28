@@ -121,14 +121,6 @@ const LoginPage = () => {
               </Button>
             </Form.Item>
           </Form>
-
-          <div className="login-footer">
-            <div className="login-tips">
-              <Text type="secondary" style={{ fontSize: 13 }}>
-                💡 测试账号：admin / admin123
-              </Text>
-            </div>
-          </div>
         </Card>
       </div>
     </div>
