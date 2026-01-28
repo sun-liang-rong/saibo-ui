@@ -122,7 +122,8 @@ export class EmailService {
       if (!sendTime) {
         throw new Error('单次任务必须指定发送时间');
       }
-      const now = new Date();
+      // 此时获取的now也需要转换时区
+      const now = dayjs.tz(new Date(), 'Asia/Shanghai').toDate();
       if (sendTime <= now) {
         throw new Error('发送时间必须在未来时间');
       }
