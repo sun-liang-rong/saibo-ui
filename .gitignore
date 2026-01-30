@@ -12,7 +12,7 @@ build
 node_modules
 
 # 日志
-logs
+
 *.log
 npm-debug.log*
 pnpm-debug.log*
