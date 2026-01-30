@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, message, Popconfirm, Card, Descriptions, Select } from 'antd';
+import { Table, Button, Modal, Form, Input, message, Popconfirm, Card, Descriptions, Select, AutoComplete } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import request from '../utils/request';
 
@@ -101,6 +101,8 @@ const Templates: React.FC = () => {
           weather: '天气',
           news: '新闻',
           gold: '黄金',
+          douyin: '抖音热搜',
+          moyu: '摸鱼日历',
           custom: '自定义',
         };
         return typeMap[type] || '自定义';
@@ -193,7 +195,16 @@ const Templates: React.FC = () => {
             label="收件人邮箱"
             rules={[{ required: true, message: '请输入收件人邮箱' }, { type: 'email' }]}
           >
-            <Input />
+            <AutoComplete
+              options={[
+                { value: '1923166187@qq.com' },
+                { value: 'sunliangrong@163.com' },
+              ]}
+              placeholder="请输入或选择收件人邮箱"
+              filterOption={(inputValue, option) =>
+                option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+              }
+            />
           </Form.Item>
           <Form.Item
             name="type"
@@ -204,6 +215,8 @@ const Templates: React.FC = () => {
               <Select.Option value="weather">天气</Select.Option>
               <Select.Option value="news">新闻</Select.Option>
               <Select.Option value="gold">黄金</Select.Option>
+              <Select.Option value="douyin">抖音热搜</Select.Option>
+              <Select.Option value="moyu">摸鱼日历</Select.Option>
               <Select.Option value="custom">自定义</Select.Option>
             </Select>
           </Form.Item>
@@ -240,6 +253,9 @@ const Templates: React.FC = () => {
                   const typeMap: { [key: string]: string } = {
                     weather: '天气',
                     news: '新闻',
+                    gold: '黄金',
+                    douyin: '抖音热搜',
+                    moyu: '摸鱼日历',
                     custom: '自定义',
                   };
                   return typeMap[previewData.type] || '自定义';
@@ -266,7 +282,11 @@ const Templates: React.FC = () => {
                     backgroundColor: '#fafafa',
                     color: '#999'
                   }}>
-                    {previewData.type === 'weather' ? '使用天气信息' : '使用新闻信息'}
+                    {previewData.type === 'weather' ? '使用天气信息' : 
+                     previewData.type === 'news' ? '使用新闻信息' :
+                     previewData.type === 'gold' ? '使用黄金价格信息' :
+                     previewData.type === 'douyin' ? '使用抖音热搜信息' :
+                     previewData.type === 'moyu' ? '使用摸鱼日历信息' : '使用预设模板'}
                   </div>
                 )}
               </Descriptions.Item>

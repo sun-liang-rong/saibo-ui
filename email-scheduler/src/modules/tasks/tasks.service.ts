@@ -52,17 +52,23 @@ export class TasksService implements OnModuleInit {
     return await this.tasksRepository.save(task);
   }
 
-  async findAll(userId: number, page?: string, pageSize?: string): Promise<{ data: ScheduledTask[]; total: number; page: number; pageSize: number }> {
+  async findAll(userId: number, page?: string, pageSize?: string, status?: string): Promise<{ data: ScheduledTask[]; total: number; page: number; pageSize: number }> {
     const pageNum = page ? parseInt(page, 10) : 1;
     const size = pageSize ? parseInt(pageSize, 10) : 10;
+    const query = this.tasksRepository.createQueryBuilder('task')
+      .leftJoinAndSelect('task.email_template', 'email_template')
+      .where('task.user_id = :userId', { userId })
+      .orderBy('task.created_at', 'DESC');
 
-    const [data, total] = await this.tasksRepository.findAndCount({
-      where: { user_id: userId },
-      relations: ['email_template'],
-      order: { created_at: 'DESC' },
-      skip: (pageNum - 1) * size,
-      take: size,
-    });
+    if (status) {
+      const statuses = status.split(',').map(s => s.trim());
+      query.andWhere('task.status IN (:...statuses)', { statuses });
+    }
+
+    query.skip((pageNum - 1) * size)
+      .take(size);
+
+    const [data, total] = await query.getManyAndCount();
 
     return {
       data,

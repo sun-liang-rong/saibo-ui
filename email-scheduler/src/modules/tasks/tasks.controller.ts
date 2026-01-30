@@ -22,8 +22,9 @@ export class TasksController {
   @ApiOperation({ summary: '获取所有定时任务' })
   @ApiQuery({ name: 'page', required: false, example: 1, description: '页码' })
   @ApiQuery({ name: 'pageSize', required: false, example: 10, description: '每页数量' })
-  findAll(@Request() req, @Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.tasksService.findAll(req.user.id, page, pageSize);
+  @ApiQuery({ name: 'status', required: false, example: 'pending', description: '任务状态：pending/running/paused/completed/failed，多个状态用逗号分隔' })
+  findAll(@Request() req, @Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('status') status?: string) {
+    return this.tasksService.findAll(req.user.id, page, pageSize, status);
   }
 
   @Put(':id')

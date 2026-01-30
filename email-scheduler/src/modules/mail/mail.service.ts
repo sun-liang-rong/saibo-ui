@@ -7,6 +7,7 @@ import { weatherTemplate } from '../email-templates/assets/weather-template';
 import { newTemplate } from '../email-templates/assets/new-template';
 import * as dayjs from 'dayjs';
 import { goldTemplate } from '../email-templates/assets/gold-template';
+import { douyinHotSearchTemplate } from '../email-templates/assets/douyin-hot-search-template';
 const weatherEmojiMap: Record<string, string> = {
   '00': '☀️',   // 晴
   '01': '⛅',   // 多云
@@ -61,6 +62,9 @@ export class MailService {
     Handlebars.registerHelper('now', function (format) {
       return dayjs().format(format);
     });
+    Handlebars.registerHelper('add', function (a, b) {
+      return a + b;
+    });
   }
 
   async sendMail(to: string, subject: string, html: string, type: string): Promise<void> {
@@ -73,8 +77,12 @@ export class MailService {
         finalHtml = await this.getNewsTemplate();
       } else if (type === 'gold') {
         finalHtml = await this.getGoldTemplate();
+      } else if (type === 'douyin') {
+        finalHtml = await this.getDouyinHotSearchTemplate();
+      } else if (type === 'moyu') {
+        finalHtml = await this.getMoyu();
       }
-
+      
       await this.transporter.sendMail({
         from: this.configService.get('MAIL_FROM'),
         to,
@@ -172,6 +180,37 @@ export class MailService {
       return compiledTemplate(templateData);
     } catch (error) {
       this.logger.error('获取黄金数据失败', error.stack);
+      throw error;
+    }
+  }
+
+  async getDouyinHotSearchTemplate(): Promise<string> {
+    try {
+      const response = await axios.get('https://60s.viki.moe/v2/douyin');
+
+      const douyinData = response.data.data;
+      const compiledTemplate = Handlebars.compile(douyinHotSearchTemplate);
+
+      const templateData = {
+        data: douyinData,
+      };
+
+      return compiledTemplate(templateData);
+    } catch (error) {
+      this.logger.error('获取抖音热搜数据失败', error.stack);
+      throw error;
+    }
+  }
+  async getMoyu() {
+    try {
+      const response = await axios.get('https://60s.viki.moe/v2/moyu', {
+        params: {
+          encoding: 'text',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      this.logger.error('获取摸鱼数据失败', error.stack);
       throw error;
     }
   }

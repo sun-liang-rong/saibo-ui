@@ -24,7 +24,7 @@ const MainLayout: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible>
+      <Sider style={{height: '100vh'}} collapsible>
         <div style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: borderRadiusLG }} >
           定时邮件系统
         </div>
@@ -60,11 +60,10 @@ const MainLayout: React.FC = () => {
             退出登录
           </Button>
         </Header>
-        <Content style={{ margin: '16px' }}>
+        <Content style={{ margin: '16px', height: 'calc(100vh - 64px - 32px)', overflow: 'auto' }}>
           <div
             style={{
               padding: 24,
-              minHeight: 360,
               background: colorBgContainer,
               borderRadius: borderRadiusLG,
             }}

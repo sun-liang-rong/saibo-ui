@@ -13,6 +13,7 @@ interface Task {
   email_template: {
     id: number;
     subject: string;
+    to_email: string;
   };
 }
 
@@ -26,6 +27,11 @@ const Tasks: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('pending');
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
+
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    setPage(1);
+  };
   const [total, setTotal] = useState<number>(0);
   
   const [cronType, setCronType] = useState<string>('daily');
@@ -35,7 +41,13 @@ const Tasks: React.FC = () => {
     try {
       const p = currentPage ?? page;
       const ps = currentPageSize ?? pageSize;
-      const res: any = await request.get('/tasks', { params: { page: p, pageSize: ps } });
+      const res: any = await request.get('/tasks', { 
+        params: { 
+          page: p, 
+          pageSize: ps,
+          status: activeTab === 'pending' ? 'pending,running,paused' : activeTab 
+        } 
+      });
       setTasks(res.data || []);
       setTotal(res.total || 0);
     } finally {
@@ -224,6 +236,11 @@ const Tasks: React.FC = () => {
       render: (_: any, record: Task) => record.email_template?.subject || '未知模板',
     },
     {
+      title: '收件人',
+      key: 'to_email',
+      render: (_: any, record: Task) => record.email_template?.to_email || '-',
+    },
+    {
       title: '执行频率',
       key: 'schedule',
       render: (_: any, record: Task) => formatCronToText(record.schedule),
@@ -285,6 +302,11 @@ const Tasks: React.FC = () => {
       render: (_: any, record: Task) => record.email_template?.subject || '未知模板',
     },
     {
+      title: '收件人',
+      key: 'to_email',
+      render: (_: any, record: Task) => record.email_template?.to_email || '-',
+    },
+    {
       title: '执行频率',
       key: 'schedule',
       render: (_: any, record: Task) => formatCronToText(record.schedule),
@@ -332,7 +354,7 @@ const Tasks: React.FC = () => {
     <div>
       <Tabs 
         activeKey={activeTab} 
-        onChange={setActiveTab}
+        onChange={handleTabChange}
         items={[
           {
             key: 'pending',
@@ -351,7 +373,7 @@ const Tasks: React.FC = () => {
                 <Table 
                   rowKey="id" 
                   columns={pendingColumns} 
-                  dataSource={tasks.filter(t => t.status === 'pending' || t.status === 'running' || t.status === 'paused')} 
+                  dataSource={tasks} 
                   loading={loading} 
                   pagination={{
                     current: page,
@@ -377,12 +399,12 @@ const Tasks: React.FC = () => {
               <Table 
                 rowKey="id" 
                 columns={completedColumns} 
-                dataSource={tasks.filter(t => t.status === 'completed' || t.status === 'failed')} 
+                dataSource={tasks} 
                 loading={loading} 
                 pagination={{
                   current: page,
                   pageSize: pageSize,
-                  total: tasks.filter(t => t.status === 'completed' || t.status === 'failed').length,
+                  total: total,
                   onChange: (p, ps) => {
                     setPage(p);
                     setPageSize(ps || 10);

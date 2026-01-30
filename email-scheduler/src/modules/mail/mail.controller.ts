@@ -60,4 +60,39 @@ export class MailController {
       };
     }
   }
+
+  @Get('douyin')
+  @ApiOperation({ summary: '测试抖音热搜模板' })
+  @ApiResponse({ status: 200, description: '返回抖音热搜模板HTML' })
+  async testDouyinTemplate() {
+    try {
+      const html = await this.mailService.getDouyinHotSearchTemplate();
+      return {
+        success: true,
+        data: html
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+  @Get('moyu')
+  @ApiOperation({ summary: '测试摸鱼模板' })
+  @ApiResponse({ status: 200, description: '返回摸鱼模板日记' })
+  async testMoyuTemplate() {
+    try {
+      const data = await this.mailService.getMoyu();
+      return {
+        success: true,
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 }
