@@ -4,15 +4,21 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import request from '../utils/request';
 
+interface RegisterValues {
+  username: string;
+  password: string;
+  confirm: string;
+}
+
 const Register: React.FC = () => {
   const navigate = useNavigate();
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: RegisterValues) => {
     try {
       await request.post('/auth/register', values);
       message.success('注册成功，请登录');
       navigate('/login');
-    } catch (error) {
+    } catch {
       // Error handled by interceptor
     }
   };

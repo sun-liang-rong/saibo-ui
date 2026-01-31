@@ -1,28 +1,31 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import MainLayout from './components/MainLayout';
-import Templates from './pages/Templates';
-import Tasks from './pages/Tasks';
-import History from './pages/History';
+
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const MainLayout = lazy(() => import('./components/MainLayout'));
+const Templates = lazy(() => import('./pages/Templates'));
+const Tasks = lazy(() => import('./pages/Tasks'));
+const History = lazy(() => import('./pages/History'));
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        <Route path="/dashboard" element={<MainLayout />}>
-          <Route path="templates" element={<Templates />} />
-          <Route path="tasks" element={<Tasks />} />
-          <Route path="history" element={<History />} />
-          <Route index element={<Navigate to="tasks" replace />} />
-        </Route>
+      <Suspense fallback={<div style={{ padding: 24 }}>加载中...</div>}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          <Route path="/dashboard" element={<MainLayout />}>
+            <Route path="templates" element={<Templates />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="history" element={<History />} />
+            <Route index element={<Navigate to="tasks" replace />} />
+          </Route>
 
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 };

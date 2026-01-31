@@ -4,16 +4,25 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import request from '../utils/request';
 
+interface LoginValues {
+  username: string;
+  password: string;
+}
+
+interface LoginResponse {
+  access_token: string;
+}
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: LoginValues) => {
     try {
-      const res: any = await request.post('/auth/login', values);
+      const res = (await request.post('/auth/login', values)) as LoginResponse;
       localStorage.setItem('token', res.access_token);
       message.success('登录成功');
       navigate('/dashboard/tasks');
-    } catch (error) {
+    } catch {
       // Error handled by interceptor
     }
   };

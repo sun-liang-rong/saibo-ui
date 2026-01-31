@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Select, message, Popconfirm, Tag, Radio, TimePicker, DatePicker, InputNumber, Space, Tabs } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import request from '../utils/request';
 
 interface Task {
@@ -17,9 +17,21 @@ interface Task {
   };
 }
 
+interface TemplateSummary {
+  id: number;
+  subject: string;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -36,36 +48,39 @@ const Tasks: React.FC = () => {
   
   const [cronType, setCronType] = useState<string>('daily');
 
-  const fetchTasks = async (currentPage?: number, currentPageSize?: number) => {
+  const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const p = currentPage ?? page;
-      const ps = currentPageSize ?? pageSize;
-      const res: any = await request.get('/tasks', { 
+      const res = (await request.get('/tasks', { 
         params: { 
-          page: p, 
-          pageSize: ps,
+          page: page, 
+          pageSize: pageSize,
           status: activeTab === 'pending' ? 'pending,running,paused' : activeTab 
         } 
-      });
-      setTasks(res.data || []);
-      setTotal(res.total || 0);
+      })) as PaginatedResponse<Task>;
+      setTasks(res.data ?? []);
+      setTotal(res.total ?? 0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, page, pageSize]);
 
-  const fetchTemplates = async () => {
-    const res: any = await request.get('/templates/all');
+  const fetchTemplates = useCallback(async () => {
+    const res = (await request.get('/templates/all')) as TemplateSummary[];
     setTemplates(res);
-  };
+  }, []);
 
   useEffect(() => {
-    fetchTasks();
-    fetchTemplates();
-  }, [activeTab]);
+    void fetchTasks();
+  }, [fetchTasks]);
 
-  const generateCron = (values: any) => {
+  useEffect(() => {
+    if (!isModalOpen) return;
+    if (templates.length) return;
+    void fetchTemplates();
+  }, [fetchTemplates, isModalOpen, templates.length]);
+
+  const generateCron = (values: { type?: string; time?: Dayjs; weekDay?: number; monthDay?: number; date?: Dayjs }) => {
     const { type, time, weekDay, monthDay, date } = values;
     const s = '0';
     
@@ -174,8 +189,8 @@ const Tasks: React.FC = () => {
       form.resetFields();
       setEditingId(null);
       fetchTasks();
-    } catch (error) {
-      console.error(error);
+    } catch {
+      // handled
     }
   };
 
@@ -184,7 +199,7 @@ const Tasks: React.FC = () => {
       await request.delete(`/tasks/${id}`);
       message.success('删除成功');
       fetchTasks();
-    } catch (error) {
+    } catch {
       // handled
     }
   };
@@ -194,7 +209,7 @@ const Tasks: React.FC = () => {
       await request.post(`/tasks/${id}/start`);
       message.success('任务已启动');
       fetchTasks();
-    } catch (error) {
+    } catch {
       // handled
     }
   };
@@ -204,7 +219,7 @@ const Tasks: React.FC = () => {
       await request.post(`/tasks/${id}/pause`);
       message.success('任务已暂停');
       fetchTasks();
-    } catch (error) {
+    } catch {
       // handled
     }
   };
@@ -233,17 +248,17 @@ const Tasks: React.FC = () => {
     {
       title: '模板',
       key: 'template',
-      render: (_: any, record: Task) => record.email_template?.subject || '未知模板',
+      render: (_: unknown, record: Task) => record.email_template?.subject || '未知模板',
     },
     {
       title: '收件人',
       key: 'to_email',
-      render: (_: any, record: Task) => record.email_template?.to_email || '-',
+      render: (_: unknown, record: Task) => record.email_template?.to_email || '-',
     },
     {
       title: '执行频率',
       key: 'schedule',
-      render: (_: any, record: Task) => formatCronToText(record.schedule),
+      render: (_: unknown, record: Task) => formatCronToText(record.schedule),
     },
     {
       title: 'Cron表达式',
@@ -277,7 +292,7 @@ const Tasks: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Task) => (
+      render: (_: unknown, record: Task) => (
         <>
           {record.status !== 'running' && (
             <Button icon={<PlayCircleOutlined />} type="link" onClick={() => handleStart(record.id)}>启动</Button>
@@ -299,17 +314,17 @@ const Tasks: React.FC = () => {
     {
       title: '模板',
       key: 'template',
-      render: (_: any, record: Task) => record.email_template?.subject || '未知模板',
+      render: (_: unknown, record: Task) => record.email_template?.subject || '未知模板',
     },
     {
       title: '收件人',
       key: 'to_email',
-      render: (_: any, record: Task) => record.email_template?.to_email || '-',
+      render: (_: unknown, record: Task) => record.email_template?.to_email || '-',
     },
     {
       title: '执行频率',
       key: 'schedule',
-      render: (_: any, record: Task) => formatCronToText(record.schedule),
+      render: (_: unknown, record: Task) => formatCronToText(record.schedule),
     },
     {
       title: 'Cron表达式',
@@ -342,7 +357,7 @@ const Tasks: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Task) => (
+      render: (_: unknown, record: Task) => (
         <Popconfirm title="确定删除吗?" onConfirm={() => handleDelete(record.id)}>
           <Button icon={<DeleteOutlined />} type="link" danger>删除</Button>
         </Popconfirm>
@@ -382,7 +397,6 @@ const Tasks: React.FC = () => {
                     onChange: (p, ps) => {
                       setPage(p);
                       setPageSize(ps || 10);
-                      fetchTasks(p, ps || 10);
                     },
                     showSizeChanger: true,
                     showQuickJumper: true,
@@ -408,7 +422,6 @@ const Tasks: React.FC = () => {
                   onChange: (p, ps) => {
                     setPage(p);
                     setPageSize(ps || 10);
-                    fetchTasks(p, ps || 10);
                   },
                   showSizeChanger: true,
                   showQuickJumper: true,
@@ -440,7 +453,7 @@ const Tasks: React.FC = () => {
             rules={[{ required: true, message: '请选择模板' }]}
           >
             <Select>
-              {templates.map((t: any) => (
+              {templates.map((t) => (
                 <Select.Option key={t.id} value={t.id}>
                   {t.subject}
                 </Select.Option>

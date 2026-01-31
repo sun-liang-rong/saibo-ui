@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Tag } from 'antd';
 import request from '../utils/request';
 interface Template {
@@ -27,6 +27,13 @@ interface Log {
   error_msg: string;
 }
 
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 const History: React.FC = () => {
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,37 +41,43 @@ const History: React.FC = () => {
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
-  const fetchLogs = async (currentPage?: number, currentPageSize?: number) => {
+
+  const fetchTemplates = useCallback(async () => {
+    if (template.length) return;
+    const templateRes = (await request.get('/templates/all')) as Template[];
+    setTemplates(templateRes);
+  }, [template.length]);
+
+  const fetchLogs = useCallback(async (currentPage?: number, currentPageSize?: number) => {
     setLoading(true);
     try {
-      const templateRes: any = await request.get('/templates/all');
-      setTemplates(templateRes)
       const p = currentPage ?? page;
       const ps = currentPageSize ?? pageSize;
-      const res: any = await request.get('/logs', { params: { page: p, pageSize: ps } });
-      setLogs(res.data || []);
-      setTotal(res.total || 0);
+      const res = (await request.get('/logs', { params: { page: p, pageSize: ps } })) as PaginatedResponse<Log>;
+      setLogs(res.data ?? []);
+      setTotal(res.total ?? 0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize]);
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    void fetchTemplates();
+    void fetchLogs();
+  }, [fetchLogs, fetchTemplates]);
 
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
     {
       title: '任务ID',
       key: 'taskId',
-      render: (_: any, record: Log) => record.task?.id,
+      render: (_: unknown, record: Log) => record.task?.id,
     },
     {
       title: '模板',
       key: 'template',
-      render: (_: any, record: Log) => {
-        let title = template.find(item => item.id === record.task?.email_template_id)?.subject || '-'
+      render: (_: unknown, record: Log) => {
+        const title = template.find(item => item.id === record.task?.email_template_id)?.subject || '-'
         return title
       },
     },

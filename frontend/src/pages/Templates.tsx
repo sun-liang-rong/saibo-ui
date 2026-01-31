@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, message, Popconfirm, Card, Descriptions, Select, AutoComplete } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import request from '../utils/request';
@@ -10,6 +10,13 @@ interface EmailTemplate {
   to_email: string;
   type: string;
   created_at: string;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 const Templates: React.FC = () => {
@@ -25,22 +32,22 @@ const Templates: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
 
-  const fetchTemplates = async (currentPage?: number, currentPageSize?: number) => {
+  const fetchTemplates = useCallback(async (currentPage?: number, currentPageSize?: number) => {
     setLoading(true);
     try {
       const p = currentPage ?? page;
       const ps = currentPageSize ?? pageSize;
-      const res: any = await request.get('/templates', { params: { page: p, pageSize: ps } });
-      setTemplates(res.data || []);
-      setTotal(res.total || 0);
+      const res = (await request.get('/templates', { params: { page: p, pageSize: ps } })) as PaginatedResponse<EmailTemplate>;
+      setTemplates(res.data ?? []);
+      setTotal(res.total ?? 0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize]);
 
   useEffect(() => {
-    fetchTemplates();
-  }, []);
+    void fetchTemplates();
+  }, [fetchTemplates]);
 
   const handleOk = async () => {
     try {
@@ -56,7 +63,7 @@ const Templates: React.FC = () => {
       form.resetFields();
       setEditingId(null);
       fetchTemplates();
-    } catch (error) {
+    } catch {
       // handled
     }
   };
@@ -66,7 +73,7 @@ const Templates: React.FC = () => {
       await request.delete(`/templates/${id}`);
       message.success('删除成功');
       fetchTemplates();
-    } catch (error) {
+    } catch {
       // handled
     }
   };
@@ -83,7 +90,7 @@ const Templates: React.FC = () => {
       const values = await form.validateFields();
       setPreviewData(values as EmailTemplate);
       setIsPreviewOpen(true);
-    } catch (error) {
+    } catch {
       // handled
     }
   };
@@ -117,7 +124,7 @@ const Templates: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: EmailTemplate) => (
+      render: (_: unknown, record: EmailTemplate) => (
         <>
           <Button icon={<EditOutlined />} type="link" onClick={() => openEdit(record)}>编辑</Button>
           <Popconfirm title="确定删除吗?" onConfirm={() => handleDelete(record.id)}>
