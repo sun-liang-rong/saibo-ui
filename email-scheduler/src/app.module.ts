@@ -9,6 +9,7 @@ import { EmailTemplatesModule } from './modules/email-templates/email-templates.
 import { TasksModule } from './modules/tasks/tasks.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { MailModule } from './modules/mail/mail.module';
+import { DouyinModule } from './modules/douyin/douyin.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { MailModule } from './modules/mail/mail.module';
     TasksModule,
     LogsModule,
     MailModule,
+    DouyinModule,
   ],
   controllers: [AppController],
   providers: [AppService],

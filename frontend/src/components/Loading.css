@@ -1,0 +1,27 @@
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.loading-container .ant-spin-dot-item {
+  background-color: #fff;
+}
+
+.loading-container .ant-spin-text {
+  color: #fff;
+  font-size: 14px;
+  margin-top: 12px;
+}

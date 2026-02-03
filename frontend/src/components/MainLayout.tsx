@@ -6,6 +6,7 @@ import {
   ScheduleOutlined,
   HistoryOutlined,
   LogoutOutlined,
+  VideoCameraOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -34,22 +35,28 @@ const MainLayout: React.FC = () => {
           selectedKeys={[location.pathname]}
           items={[
             {
-              key: '/dashboard/templates',
+              key: '/templates',
               icon: <FileTextOutlined />,
               label: '邮件模板',
-              onClick: () => navigate('/dashboard/templates'),
+              onClick: () => navigate('/templates'),
             },
             {
-              key: '/dashboard/tasks',
+              key: '/tasks',
               icon: <ScheduleOutlined />,
               label: '定时任务',
-              onClick: () => navigate('/dashboard/tasks'),
+              onClick: () => navigate('/tasks'),
             },
             {
-              key: '/dashboard/history',
+              key: '/history',
               icon: <HistoryOutlined />,
               label: '执行历史',
-              onClick: () => navigate('/dashboard/history'),
+              onClick: () => navigate('/history'),
+            },
+            {
+              key: '/douyin',
+              icon: <VideoCameraOutlined />,
+              label: '抖音去水印',
+              onClick: () => navigate('/douyin'),
             },
           ]}
         />

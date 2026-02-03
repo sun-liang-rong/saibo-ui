@@ -1,13 +1,30 @@
 import axios from 'axios';
 import { message } from 'antd';
 
+let activeRequests = 0;
+
+const showGlobalLoading = () => {
+  activeRequests++;
+  if (activeRequests === 1) {
+    window.dispatchEvent(new CustomEvent('show-loading'));
+  }
+};
+
+const hideGlobalLoading = () => {
+  activeRequests--;
+  if (activeRequests === 0) {
+    window.dispatchEvent(new CustomEvent('hide-loading'));
+  }
+};
+
 const request = axios.create({
-  baseURL: '/api', // Proxy will handle this or full URL
+  baseURL: '/api',
   timeout: 10000,
 });
 
 request.interceptors.request.use(
   (config) => {
+    showGlobalLoading();
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -15,15 +32,18 @@ request.interceptors.request.use(
     return config;
   },
   (error) => {
+    hideGlobalLoading();
     return Promise.reject(error);
   }
 );
 
 request.interceptors.response.use(
   (response) => {
+    hideGlobalLoading();
     return response.data;
   },
   (error) => {
+    hideGlobalLoading();
     if (error.response) {
       if (error.response.status === 401) {
         localStorage.removeItem('token');
