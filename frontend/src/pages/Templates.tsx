@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, message, Popconfirm, Card, Descriptions, Select, AutoComplete } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Typography, Popconfirm, Tooltip, Modal, Form, Input, message } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, ClockCircleOutlined, MailOutlined } from '@ant-design/icons';
 import request from '../utils/request';
 
-interface EmailTemplate {
+const { Title, Text } = Typography;
+const { TextArea } = Input;
+
+interface Template {
   id: number;
   subject: string;
   body: string;
   to_email: string;
-  type: string;
   created_at: string;
+  updated_at: string;
 }
 
 interface PaginatedResponse<T> {
@@ -20,14 +23,11 @@ interface PaginatedResponse<T> {
 }
 
 const Templates: React.FC = () => {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [form] = Form.useForm();
-  const [previewData, setPreviewData] = useState<EmailTemplate | null>(null);
-  const [templateType, setTemplateType] = useState<string>('custom');
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
@@ -37,7 +37,7 @@ const Templates: React.FC = () => {
     try {
       const p = currentPage ?? page;
       const ps = currentPageSize ?? pageSize;
-      const res = (await request.get('/templates', { params: { page: p, pageSize: ps } })) as PaginatedResponse<EmailTemplate>;
+      const res = (await request.get('/templates', { params: { page: p, pageSize: ps } })) as PaginatedResponse<Template>;
       setTemplates(res.data ?? []);
       setTotal(res.total ?? 0);
     } finally {
@@ -49,112 +49,158 @@ const Templates: React.FC = () => {
     void fetchTemplates();
   }, [fetchTemplates]);
 
-  const handleOk = async () => {
-    try {
-      const values = await form.validateFields();
-      if (editingId) {
-        await request.put(`/templates/${editingId}`, values);
-        message.success('更新成功');
-      } else {
-        await request.post('/templates', values);
-        message.success('创建成功');
-      }
-      setIsModalOpen(false);
-      form.resetFields();
-      setEditingId(null);
-      fetchTemplates();
-    } catch {
-      // handled
-    }
+  const handleAdd = () => {
+    setEditingTemplate(null);
+    form.resetFields();
+    setIsModalVisible(true);
+  };
+
+  const handleEdit = (template: Template) => {
+    setEditingTemplate(template);
+    form.setFieldsValue(template);
+    setIsModalVisible(true);
   };
 
   const handleDelete = async (id: number) => {
     try {
       await request.delete(`/templates/${id}`);
       message.success('删除成功');
-      fetchTemplates();
-    } catch {
-      // handled
-    }
+      void fetchTemplates();
+    } catch {}
   };
 
-  const openEdit = (record: EmailTemplate) => {
-    setEditingId(record.id);
-    setTemplateType(record.type || 'custom');
-    form.setFieldsValue(record);
-    setIsModalOpen(true);
-  };
-
-  const handlePreview = async () => {
+  const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      setPreviewData(values as EmailTemplate);
-      setIsPreviewOpen(true);
-    } catch {
-      // handled
-    }
+      if (editingTemplate) {
+        await request.put(`/templates/${editingTemplate.id}`, values);
+        message.success('更新成功');
+      } else {
+        await request.post('/templates', values);
+        message.success('创建成功');
+      }
+      setIsModalVisible(false);
+      void fetchTemplates();
+    } catch {}
   };
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', key: 'id' },
-    { title: '主题', dataIndex: 'subject', key: 'subject' },
-    { title: '收件人', dataIndex: 'to_email', key: 'to_email' },
     {
-      title: '类型',
-      dataIndex: 'type',
-      key: 'type',
-      render: (type: string) => {
-        const typeMap: { [key: string]: string } = {
-          weather: '天气',
-          news: '新闻',
-          gold: '黄金',
-          douyin: '抖音热搜',
-          moyu: '摸鱼日历',
-          custom: '自定义',
-        };
-        return typeMap[type] || '自定义';
-      },
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      width: 80,
+    },
+    {
+      title: '邮件主题',
+      dataIndex: 'subject',
+      key: 'subject',
+      ellipsis: true,
+      render: (subject: string) => (
+        <Space size={8}>
+          <MailOutlined style={{ color: '#6366f1' }} />
+          <Text>{subject}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: '收件人',
+      dataIndex: 'to_email',
+      key: 'to_email',
+      ellipsis: true,
+      render: (email: string) => (
+        <Text ellipsis={{ tooltip: email }}>{email}</Text>
+      ),
+    },
+    {
+      title: '邮件内容',
+      dataIndex: 'body',
+      key: 'body',
+      ellipsis: true,
+      render: (body: string) => (
+        <Text type="secondary" ellipsis={{ tooltip: body }}>
+          {body}
+        </Text>
+      ),
     },
     {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => date ? new Date(date).toLocaleString('zh-CN') : '-',
+      width: 180,
+      render: (text: string) => (
+        <Space size={4}>
+          <ClockCircleOutlined style={{ color: '#94a3b8' }} />
+          <Text>{new Date(text).toLocaleString('zh-CN')}</Text>
+        </Space>
+      ),
     },
     {
       title: '操作',
-      key: 'action',
-      render: (_: unknown, record: EmailTemplate) => (
-        <>
-          <Button icon={<EditOutlined />} type="link" onClick={() => openEdit(record)}>编辑</Button>
-          <Popconfirm title="确定删除吗?" onConfirm={() => handleDelete(record.id)}>
-            <Button icon={<DeleteOutlined />} type="link" danger>删除</Button>
+      key: 'actions',
+      width: 160,
+      fixed: 'right' as const,
+      render: (_: unknown, record: Template) => (
+        <Space size="small">
+          <Tooltip title="编辑模板">
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+              编辑
+            </Button>
+          </Tooltip>
+          <Popconfirm title="确认删除此模板吗？" onConfirm={() => handleDelete(record.id)} okText="确认" cancelText="取消">
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
           </Popconfirm>
-        </>
+        </Space>
       ),
     },
   ];
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Space align="center" size={12}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              borderRadius: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FileTextOutlined style={{ fontSize: 24, color: '#fff' }} />
+          </div>
+          <div>
+            <Title level={3} style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>
+              邮件模板
+            </Title>
+            <Text type="secondary">创建和管理邮件发送模板</Text>
+          </div>
+        </Space>
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => {
-            setEditingId(null);
-            form.resetFields();
-            setTemplateType('custom');
-            setIsModalOpen(true);
+          onClick={handleAdd}
+          style={{
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            border: 'none',
+            height: 40,
+            fontSize: 14,
+            fontWeight: 600,
           }}
         >
           新建模板
         </Button>
       </div>
-      <Table 
-        rowKey="id" 
-        columns={columns} 
-        dataSource={templates} 
+
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={templates}
         loading={loading}
         pagination={{
           current: page,
@@ -167,139 +213,46 @@ const Templates: React.FC = () => {
           },
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (t) => `共 ${t} 条`,
+          showTotal: (t) => `共 ${t} 条模板`,
+          pageSizeOptions: ['10', '20', '50', '100'],
         }}
+        scroll={{ x: 1000 }}
       />
 
       <Modal
-        title={editingId ? '编辑模板' : '新建模板'}
-        open={isModalOpen}
-        onOk={handleOk}
-        onCancel={() => setIsModalOpen(false)}
+        title={editingTemplate ? '编辑模板' : '新建模板'}
+        open={isModalVisible}
+        onOk={handleModalOk}
+        onCancel={() => setIsModalVisible(false)}
+        okText="保存"
+        cancelText="取消"
         width={600}
-        footer={[
-          <Button key="preview" icon={<EyeOutlined />} onClick={handlePreview}>
-            预览
-          </Button>,
-          <Button key="cancel" onClick={() => setIsModalOpen(false)}>
-            取消
-          </Button>,
-          <Button key="submit" type="primary" onClick={handleOk}>
-            {editingId ? '更新' : '创建'}
-          </Button>,
-        ]}
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="subject"
-            label="主题"
-            rules={[{ required: true, message: '请输入主题' }]}
+            label="邮件主题"
+            rules={[{ required: true, message: '请输入邮件主题' }]}
           >
-            <Input />
+            <Input placeholder="请输入邮件主题" />
           </Form.Item>
+
           <Form.Item
             name="to_email"
             label="收件人邮箱"
-            rules={[{ required: true, message: '请输入收件人邮箱' }, { type: 'email' }]}
+            rules={[{ required: true, message: '请输入收件人邮箱' }, { type: 'email', message: '请输入有效的邮箱地址' }]}
           >
-            <AutoComplete
-              options={[
-                { value: '1923166187@qq.com' },
-                { value: 'sunliangrong@163.com' },
-              ]}
-              placeholder="请输入或选择收件人邮箱"
-              filterOption={(inputValue, option) =>
-                option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-              }
-            />
+            <Input placeholder="请输入收件人邮箱" />
           </Form.Item>
-          <Form.Item
-            name="type"
-            label="类型"
-            rules={[{ required: true, message: '请选择类型' }]}
-          >
-            <Select onChange={(value) => setTemplateType(value)}>
-              <Select.Option value="weather">天气</Select.Option>
-              <Select.Option value="news">新闻</Select.Option>
-              <Select.Option value="gold">黄金</Select.Option>
-              <Select.Option value="douyin">抖音热搜</Select.Option>
-              <Select.Option value="moyu">摸鱼日历</Select.Option>
-              <Select.Option value="custom">自定义</Select.Option>
-            </Select>
-          </Form.Item>
-          {templateType === 'custom' && (
-            <Form.Item
-              name="body"
-              label="内容"
-              rules={[{ required: true, message: '请输入内容' }]}
-            >
-              <Input.TextArea rows={4} />
-            </Form.Item>
-          )}
-        </Form>
-      </Modal>
 
-      <Modal
-        title="邮件预览"
-        open={isPreviewOpen}
-        onCancel={() => setIsPreviewOpen(false)}
-        footer={[
-          <Button key="close" type="primary" onClick={() => setIsPreviewOpen(false)}>
-            关闭
-          </Button>,
-        ]}
-        width={800}
-      >
-        {previewData && (
-          <Card>
-            <Descriptions bordered column={1}>
-              <Descriptions.Item label="收件人">{previewData.to_email}</Descriptions.Item>
-              <Descriptions.Item label="主题">{previewData.subject}</Descriptions.Item>
-              <Descriptions.Item label="类型">
-                {(() => {
-                  const typeMap: { [key: string]: string } = {
-                    weather: '天气',
-                    news: '新闻',
-                    gold: '黄金',
-                    douyin: '抖音热搜',
-                    moyu: '摸鱼日历',
-                    custom: '自定义',
-                  };
-                  return typeMap[previewData.type] || '自定义';
-                })()}
-              </Descriptions.Item>
-              <Descriptions.Item label="内容">
-                {previewData.type === 'custom' ? (
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: previewData.body }}
-                    style={{ 
-                      padding: '12px',
-                      border: '1px solid #d9d9d9',
-                      borderRadius: '6px',
-                      minHeight: '100px',
-                      backgroundColor: '#fafafa'
-                    }}
-                  />
-                ) : (
-                  <div style={{ 
-                    padding: '12px',
-                    border: '1px solid #d9d9d9',
-                    borderRadius: '6px',
-                    minHeight: '100px',
-                    backgroundColor: '#fafafa',
-                    color: '#999'
-                  }}>
-                    {previewData.type === 'weather' ? '使用天气信息' : 
-                     previewData.type === 'news' ? '使用新闻信息' :
-                     previewData.type === 'gold' ? '使用黄金价格信息' :
-                     previewData.type === 'douyin' ? '使用抖音热搜信息' :
-                     previewData.type === 'moyu' ? '使用摸鱼日历信息' : '使用预设模板'}
-                  </div>
-                )}
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
-        )}
+          <Form.Item
+            name="body"
+            label="邮件内容"
+            rules={[{ required: true, message: '请输入邮件内容' }]}
+          >
+            <TextArea rows={8} placeholder="请输入邮件内容" />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

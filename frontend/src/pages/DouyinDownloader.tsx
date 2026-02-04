@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Card, Input, Button, message, Spin, Image, Typography, Space, Tag, Descriptions } from 'antd';
-import { DownloadOutlined, PlayCircleOutlined, UserOutlined, HeartOutlined, MessageOutlined, ShareAltOutlined } from '@ant-design/icons';
+import { Card, Input, Button, message, Spin, Image, Typography, Space, Tag, Descriptions, Row, Col, Divider } from 'antd';
+import { DownloadOutlined, PlayCircleOutlined, UserOutlined, HeartOutlined, MessageOutlined, ShareAltOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import request from '../utils/request';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 interface VideoInfo {
@@ -30,7 +30,6 @@ const DouyinDownloader: React.FC = () => {
       return;
     }
 
-    // 简单验证链接格式
     if (!url.includes('douyin.com')) {
       message.error('请输入有效的抖音链接');
       return;
@@ -41,7 +40,7 @@ const DouyinDownloader: React.FC = () => {
 
     try {
       const response: any = await request.post('/douyin/parse', { url: url.trim() });
-      
+
       if (response.success && response.data) {
         setVideoInfo(response.data);
         message.success('解析成功！');
@@ -61,16 +60,14 @@ const DouyinDownloader: React.FC = () => {
       return;
     }
 
-    // 创建临时链接下载
     const link = document.createElement('a');
     link.href = videoInfo.videoUrl;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    
-    // 尝试设置下载文件名
+
     const filename = `${videoInfo.author}_${videoInfo.awemeId}.mp4`;
     link.download = filename;
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -95,19 +92,42 @@ const DouyinDownloader: React.FC = () => {
 
   return (
     <div>
-      <Title level={2}>抖音去水印下载</Title>
-      <Text type="secondary">粘贴抖音分享链接，一键下载无水印视频</Text>
+      <div style={{ marginBottom: 24 }}>
+        <Space align="center" size={12}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              borderRadius: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <VideoCameraOutlined style={{ fontSize: 24, color: '#fff' }} />
+          </div>
+          <div>
+            <Title level={3} style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>
+              抖音去水印下载
+            </Title>
+            <Text type="secondary">粘贴抖音分享链接，一键下载无水印视频</Text>
+          </div>
+        </Space>
+      </div>
 
-      <Card style={{ marginTop: 24 }}>
+      <Card style={{ marginBottom: 24 }} bordered={false} styles={{ body: { padding: 24 } }}>
         <Space direction="vertical" style={{ width: '100%' }} size="large">
           <div>
-            <Text strong>抖音分享链接：</Text>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>
+              抖音分享链接
+            </Text>
             <TextArea
               placeholder="请粘贴抖音分享链接，例如：https://v.douyin.com/xxxxx/"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               rows={3}
-              style={{ marginTop: 8 }}
+              style={{ borderRadius: 8 }}
             />
           </div>
 
@@ -117,6 +137,13 @@ const DouyinDownloader: React.FC = () => {
             onClick={handleParse}
             loading={loading}
             block
+            style={{
+              height: 48,
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              border: 'none',
+              fontSize: 15,
+              fontWeight: 600,
+            }}
           >
             {loading ? '解析中...' : '解析视频'}
           </Button>
@@ -124,86 +151,171 @@ const DouyinDownloader: React.FC = () => {
       </Card>
 
       {loading && (
-        <div style={{ textAlign: 'center', marginTop: 48 }}>
+        <Card bordered={false} styles={{ body: { padding: 48, textAlign: 'center' } }}>
           <Spin size="large" />
-          <p style={{ marginTop: 16 }}>正在解析视频信息...</p>
-        </div>
+          <Paragraph type="secondary" style={{ marginTop: 16, marginBottom: 0 }}>
+            正在解析视频信息...
+          </Paragraph>
+        </Card>
       )}
 
       {videoInfo && !loading && (
-        <Card style={{ marginTop: 24 }}>
-          <Space direction="vertical" style={{ width: '100%' }} size="large">
-            {/* 视频封面 */}
-            <div style={{ textAlign: 'center' }}>
-              <Image
-                src={videoInfo.cover}
-                alt="视频封面"
-                style={{ maxWidth: '100%', maxHeight: 400, borderRadius: 8 }}
-                preview={false}
-              />
-            </div>
+        <Card bordered={false} styles={{ body: { padding: 24 } }}>
+          <Row gutter={[24, 24]}>
+            <Col xs={24} md={12}>
+              <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 12px rgb(0 0 0 / 0.08)' }}>
+                <Image
+                  src={videoInfo.cover}
+                  alt="视频封面"
+                  style={{ width: '100%', display: 'block' }}
+                  preview={false}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 12,
+                    right: 12,
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    color: '#fff',
+                    padding: '4px 12px',
+                    borderRadius: 4,
+                    fontSize: 12,
+                    fontWeight: 500,
+                  }}
+                >
+                  <PlayCircleOutlined style={{ marginRight: 4 }} />
+                  {formatDuration(videoInfo.duration)}
+                </div>
+              </div>
+            </Col>
 
-            {/* 视频信息 */}
-            <Descriptions title="视频信息" bordered column={2}>
-              <Descriptions.Item label="标题" span={2}>
-                <Text ellipsis={{ tooltip: videoInfo.title }} style={{ maxWidth: 400 }}>
-                  {videoInfo.title}
+            <Col xs={24} md={12}>
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                <div>
+                  <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 15 }}>
+                    视频标题
+                  </Text>
+                  <Paragraph ellipsis={{ rows: 2, tooltip: videoInfo.title }} style={{ marginBottom: 0, color: '#64748b' }}>
+                    {videoInfo.title}
+                  </Paragraph>
+                </div>
+
+                <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      作者
+                    </Text>
+                    <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {videoInfo.authorAvatar && (
+                        <img
+                          src={videoInfo.authorAvatar}
+                          alt="avatar"
+                          style={{ width: 28, height: 28, borderRadius: '50%' }}
+                        />
+                      )}
+                      <Text strong style={{ fontSize: 14 }}>
+                        {videoInfo.author}
+                      </Text>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      视频ID
+                    </Text>
+                    <div style={{ marginTop: 4 }}>
+                      <Tag color="blue">{videoInfo.awemeId}</Tag>
+                    </div>
+                  </div>
+                </Space>
+
+                <Divider style={{ margin: '12px 0' }} />
+
+                <div>
+                  <Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>
+                    互动数据
+                  </Text>
+                  <Row gutter={12}>
+                    <Col span={8}>
+                      <div
+                        style={{
+                          background: '#fef2f2',
+                          borderRadius: 8,
+                          padding: 12,
+                          textAlign: 'center',
+                        }}
+                      >
+                        <HeartOutlined style={{ color: '#ef4444', fontSize: 18 }} />
+                        <div style={{ marginTop: 4, fontSize: 16, fontWeight: 600, color: '#1e293b' }}>
+                          {formatNumber(videoInfo.diggCount)}
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          点赞
+                        </Text>
+                      </div>
+                    </Col>
+                    <Col span={8}>
+                      <div
+                        style={{
+                          background: '#eff6ff',
+                          borderRadius: 8,
+                          padding: 12,
+                          textAlign: 'center',
+                        }}
+                      >
+                        <MessageOutlined style={{ color: '#3b82f6', fontSize: 18 }} />
+                        <div style={{ marginTop: 4, fontSize: 16, fontWeight: 600, color: '#1e293b' }}>
+                          {formatNumber(videoInfo.commentCount)}
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          评论
+                        </Text>
+                      </div>
+                    </Col>
+                    <Col span={8}>
+                      <div
+                        style={{
+                          background: '#f0fdf4',
+                          borderRadius: 8,
+                          padding: 12,
+                          textAlign: 'center',
+                        }}
+                      >
+                        <ShareAltOutlined style={{ color: '#10b981', fontSize: 18 }} />
+                        <div style={{ marginTop: 4, fontSize: 16, fontWeight: 600, color: '#1e293b' }}>
+                          {formatNumber(videoInfo.shareCount)}
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          分享
+                        </Text>
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
+
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<DownloadOutlined />}
+                  onClick={handleDownload}
+                  block
+                  style={{
+                    height: 48,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                    border: 'none',
+                  }}
+                >
+                  下载无水印视频
+                </Button>
+
+                <Text type="secondary" style={{ textAlign: 'center', display: 'block', fontSize: 12 }}>
+                  如果下载没有自动开始，请右键点击按钮选择"在新标签页打开链接"
                 </Text>
-              </Descriptions.Item>
-              
-              <Descriptions.Item label="作者">
-                <Space>
-                  {videoInfo.authorAvatar && (
-                    <img 
-                      src={videoInfo.authorAvatar} 
-                      alt="avatar" 
-                      style={{ width: 24, height: 24, borderRadius: '50%' }} 
-                    />
-                  )}
-                  <UserOutlined />
-                  {videoInfo.author}
-                </Space>
-              </Descriptions.Item>
-              
-              <Descriptions.Item label="视频ID">
-                <Tag color="blue">{videoInfo.awemeId}</Tag>
-              </Descriptions.Item>
-              
-              <Descriptions.Item label="时长">
-                <PlayCircleOutlined /> {formatDuration(videoInfo.duration)}
-              </Descriptions.Item>
-              
-              <Descriptions.Item label="互动数据">
-                <Space>
-                  <Tag icon={<HeartOutlined />} color="red">
-                    {formatNumber(videoInfo.diggCount)}
-                  </Tag>
-                  <Tag icon={<MessageOutlined />} color="blue">
-                    {formatNumber(videoInfo.commentCount)}
-                  </Tag>
-                  <Tag icon={<ShareAltOutlined />} color="green">
-                    {formatNumber(videoInfo.shareCount)}
-                  </Tag>
-                </Space>
-              </Descriptions.Item>
-            </Descriptions>
-
-            {/* 下载按钮 */}
-            <Button
-              type="primary"
-              size="large"
-              icon={<DownloadOutlined />}
-              onClick={handleDownload}
-              block
-              style={{ height: 48, fontSize: 16 }}
-            >
-              下载无水印视频
-            </Button>
-
-            <Text type="secondary" style={{ textAlign: 'center', display: 'block' }}>
-              如果下载没有自动开始，请右键点击按钮选择"在新标签页打开链接"
-            </Text>
-          </Space>
+              </Space>
+            </Col>
+          </Row>
         </Card>
       )}
     </div>

@@ -1,25 +1,29 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Select, message, Popconfirm, Tag, Radio, TimePicker, DatePicker, InputNumber, Space, Tabs } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
-import dayjs, { Dayjs } from 'dayjs';
+import { Table, Tabs, Tag, Button, Space, Typography, Popconfirm, Tooltip } from 'antd';
+import { PlusOutlined, PlayCircleOutlined, PauseCircleOutlined, DeleteOutlined, ReloadOutlined, CalendarOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import request from '../utils/request';
+
+const { Title, Text } = Typography;
+const { TabPane } = Tabs;
+
+interface Template {
+  id: number;
+  subject: string;
+  body: string;
+  to_email: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface Task {
   id: number;
+  user_id: number;
+  email_template_id: number;
   schedule: string;
   status: string;
+  is_rule: boolean;
   created_at: string;
-  last_executed_at: string;
-  email_template: {
-    id: number;
-    subject: string;
-    to_email: string;
-  };
-}
-
-interface TemplateSummary {
-  id: number;
-  subject: string;
+  updated_at: string;
 }
 
 interface PaginatedResponse<T> {
@@ -31,498 +35,240 @@ interface PaginatedResponse<T> {
 
 const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [form] = Form.useForm();
-  const [activeTab, setActiveTab] = useState<string>('pending');
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [activeTab, setActiveTab] = useState('pending');
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
-
-  const handleTabChange = (key: string) => {
-    setActiveTab(key);
-    setPage(1);
-  };
   const [total, setTotal] = useState<number>(0);
-  
-  const [cronType, setCronType] = useState<string>('daily');
+  const [queryStatus, setQueryStatus] = useState(['PENDING', 'RUNNING', 'PAUSED'])
+  const fetchTemplates = useCallback(async () => {
+    if (templates.length) return;
+    const templateRes = (await request.get('/templates/all')) as Template[];
+    setTemplates(templateRes);
+  }, [templates.length]);
 
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (currentPage?: number, currentPageSize?: number) => {
     setLoading(true);
     try {
-      const res = (await request.get('/tasks', { 
-        params: { 
-          page: page, 
-          pageSize: pageSize,
-          status: activeTab === 'pending' ? 'pending,running,paused' : activeTab 
-        } 
-      })) as PaginatedResponse<Task>;
+      const p = currentPage ?? page;
+      const ps = currentPageSize ?? pageSize;
+      const res = (await request.get('/tasks', { params: { page: p, pageSize: ps, status: queryStatus.join(',') } })) as PaginatedResponse<Task>;
       setTasks(res.data ?? []);
       setTotal(res.total ?? 0);
     } finally {
       setLoading(false);
     }
-  }, [activeTab, page, pageSize]);
-
-  const fetchTemplates = useCallback(async () => {
-    const res = (await request.get('/templates/all')) as TemplateSummary[];
-    setTemplates(res);
-  }, []);
+  }, [page, pageSize, activeTab]);
 
   useEffect(() => {
-    void fetchTasks();
-  }, [fetchTasks]);
-
-  useEffect(() => {
-    if (!isModalOpen) return;
-    if (templates.length) return;
     void fetchTemplates();
-  }, [fetchTemplates, isModalOpen, templates.length]);
+    void fetchTasks();
+  }, [fetchTasks, fetchTemplates]);
 
-  const generateCron = (values: { type?: string; time?: Dayjs; weekDay?: number; monthDay?: number; date?: Dayjs }) => {
-    const { type, time, weekDay, monthDay, date } = values;
-    const s = '0';
-    
-    if (type === 'once' && date) {
-      const d = dayjs(date);
-      return `${s} ${d.minute()} ${d.hour()} ${d.date()} ${d.month() + 1} *`;
-    }
-    
-    if (time) {
-      const t = dayjs(time);
-      const m = t.minute();
-      const h = t.hour();
-      
-      if (type === 'daily') return `${s} ${m} ${h} * * *`;
-      if (type === 'weekly') return `${s} ${m} ${h} * * ${weekDay}`;
-      if (type === 'monthly') return `${s} ${m} ${h} ${monthDay} * *`;
-    }
-    
-    return '* * * * * *';
-  };
-
-  const parseCron = (cron: string) => {
-    if (!cron) return { type: 'daily', time: dayjs() };
-    
-    const parts = cron.split(' ');
-    const offset = parts.length === 6 ? 1 : 0;
-    
-    const minute = parseInt(parts[0 + offset]) || 0;
-    const hour = parseInt(parts[1 + offset]) || 0;
-    const dayOfMonth = parts[2 + offset];
-    const month = parts[3 + offset];
-    const dayOfWeek = parts[4 + offset];
-    
-    const time = dayjs().hour(hour).minute(minute);
-    
-    if (dayOfMonth === '*' && month === '*' && dayOfWeek === '*') {
-      return { type: 'daily', time };
-    }
-    if (dayOfMonth === '*' && month === '*' && dayOfWeek !== '*') {
-      return { type: 'weekly', time, weekDay: parseInt(dayOfWeek) };
-    }
-    if (dayOfMonth !== '*' && month === '*' && dayOfWeek === '*') {
-      return { type: 'monthly', time, monthDay: parseInt(dayOfMonth) };
-    }
-    if (dayOfMonth !== '*' && month !== '*') {
-      const date = dayjs().month(parseInt(month) - 1).date(parseInt(dayOfMonth)).hour(hour).minute(minute);
-      return { type: 'once', date };
-    }
-    
-    return { type: 'daily', time };
-  };
-
-  const formatCronToText = (cron: string) => {
-    if (!cron) return '-';
-    
-    const parts = cron.split(' ');
-    const offset = parts.length === 6 ? 1 : 0;
-    
-    const minute = parseInt(parts[0 + offset]) || 0;
-    const hour = parseInt(parts[1 + offset]) || 0;
-    const dayOfMonth = parts[2 + offset];
-    const month = parts[3 + offset];
-    const dayOfWeek = parts[4 + offset];
-    
-    const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-    
-    if (dayOfMonth === '*' && month === '*' && dayOfWeek === '*') {
-      return `每天 ${timeStr}`;
-    }
-    
-    if (dayOfMonth === '*' && month === '*' && dayOfWeek !== '*') {
-      const weekMap: { [key: number]: string } = { 0: '周日', 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六' };
-      return `每周${weekMap[parseInt(dayOfWeek)]} ${timeStr}`;
-    }
-    
-    if (dayOfMonth !== '*' && month === '*' && dayOfWeek === '*') {
-      return `每月${parseInt(dayOfMonth)}日 ${timeStr}`;
-    }
-    
-    if (dayOfMonth !== '*' && month !== '*') {
-      const date = dayjs().month(parseInt(month) - 1).date(parseInt(dayOfMonth)).hour(hour).minute(minute);
-      return `单次 ${date.format('YYYY-MM-DD HH:mm')}`;
-    }
-    
-    return cron;
-  };
-
-  const handleOk = async () => {
+  const handlePause = async (id: number) => {
     try {
-      const values = await form.validateFields();
-      const schedule = generateCron(values);
-      
-      const payload = {
-        email_template_id: values.email_template_id,
-        schedule,
-      };
+      await request.patch(`/tasks/${id}`, { status: 'PAUSED' });
+      void fetchTasks();
+    } catch {}
+  };
 
-      if (editingId) {
-        await request.put(`/tasks/${editingId}`, payload);
-        message.success('更新成功');
-      } else {
-        await request.post('/tasks', payload);
-        message.success('创建成功');
-      }
-      setIsModalOpen(false);
-      form.resetFields();
-      setEditingId(null);
-      fetchTasks();
-    } catch {
-      // handled
-    }
+  const handleResume = async (id: number) => {
+    try {
+      await request.patch(`/tasks/${id}`, { status: 'PENDING' });
+      void fetchTasks();
+    } catch {}
   };
 
   const handleDelete = async (id: number) => {
     try {
       await request.delete(`/tasks/${id}`);
-      message.success('删除成功');
-      fetchTasks();
-    } catch {
-      // handled
-    }
+      void fetchTasks();
+    } catch {}
   };
 
-  const handleStart = async (id: number) => {
-    try {
-      await request.post(`/tasks/${id}/start`);
-      message.success('任务已启动');
-      fetchTasks();
-    } catch {
-      // handled
-    }
+  const getStatusConfig = (status: string) => {
+    const configs = {
+      PENDING: { color: 'default', icon: <ClockCircleOutlined />, text: '待执行' },
+      RUNNING: { color: 'processing', icon: <PlayCircleOutlined />, text: '运行中' },
+      COMPLETED: { color: 'success', icon: <ReloadOutlined />, text: '已完成' },
+      FAILED: { color: 'error', icon: <DeleteOutlined />, text: '失败' },
+      PAUSED: { color: 'warning', icon: <PauseCircleOutlined />, text: '暂停' },
+    };
+    return configs[status] || { color: 'default', icon: null, text: status };
   };
 
-  const handlePause = async (id: number) => {
-    try {
-      await request.post(`/tasks/${id}/pause`);
-      message.success('任务已暂停');
-      fetchTasks();
-    } catch {
-      // handled
-    }
-  };
-
-  const openEdit = (record: Task) => {
-    setEditingId(record.id);
-    const formValues = parseCron(record.schedule);
-    setCronType(formValues.type);
-    form.setFieldsValue({
-      email_template_id: record.email_template?.id,
-      ...formValues,
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleCreate = () => {
-    setEditingId(null);
-    form.resetFields();
-    setCronType('daily');
-    form.setFieldsValue({ type: 'daily', time: dayjs() });
-    setIsModalOpen(true);
-  };
-
-  const pendingColumns = [
-    { title: 'ID', dataIndex: 'id', key: 'id' },
+  const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      width: 80,
+    },
     {
       title: '模板',
       key: 'template',
-      render: (_: unknown, record: Task) => record.email_template?.subject || '未知模板',
+      ellipsis: true,
+      render: (_: unknown, record: Task) => {
+        const title = templates.find((item) => item.id === record.email_template_id)?.subject || '-';
+        return title;
+      },
     },
     {
-      title: '收件人',
-      key: 'to_email',
-      render: (_: unknown, record: Task) => record.email_template?.to_email || '-',
-    },
-    {
-      title: '执行频率',
-      key: 'schedule',
-      render: (_: unknown, record: Task) => formatCronToText(record.schedule),
-    },
-    {
-      title: 'Cron表达式',
+      title: '调度时间',
       dataIndex: 'schedule',
-      key: 'schedule_raw',
+      key: 'schedule',
+      render: (schedule: string) => (
+        <Space size={4}>
+          <CalendarOutlined style={{ color: '#94a3b8' }} />
+          <Text>{schedule}</Text>
+        </Space>
+      ),
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: 120,
       render: (status: string) => {
-        let color = 'default';
-        if (status === 'running') color = 'success';
-        if (status === 'paused') color = 'warning';
-        if (status === 'failed') color = 'error';
-        return <Tag color={color}>{status.toUpperCase()}</Tag>;
+        const { color, icon, text } = getStatusConfig(status);
+        return (
+          <Tag color={color} icon={icon}>
+            {text}
+          </Tag>
+        );
       },
     },
     {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => date ? new Date(date).toLocaleString('zh-CN') : '-',
-    },
-    {
-      title: '上次执行时间',
-      dataIndex: 'last_executed_at',
-      key: 'last_executed_at',
-      render: (date: string) => date ? new Date(date).toLocaleString('zh-CN') : '-',
+      width: 180,
+      render: (text: string) => new Date(text).toLocaleString('zh-CN'),
     },
     {
       title: '操作',
-      key: 'action',
+      key: 'actions',
+      width: 200,
+      fixed: 'right' as const,
       render: (_: unknown, record: Task) => (
-        <>
-          {record.status !== 'running' && (
-            <Button icon={<PlayCircleOutlined />} type="link" onClick={() => handleStart(record.id)}>启动</Button>
+        <Space size="small">
+          {record.status === 'PAUSED' ? (
+            <Tooltip title="恢复任务">
+              <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => handleResume(record.id)}>
+                恢复
+              </Button>
+            </Tooltip>
+          ) : (
+            <Tooltip title="暂停任务">
+              <Button type="link" size="small" icon={<PauseCircleOutlined />} onClick={() => handlePause(record.id)}>
+                暂停
+              </Button>
+            </Tooltip>
           )}
-          {record.status === 'running' && (
-            <Button icon={<PauseCircleOutlined />} type="link" onClick={() => handlePause(record.id)}>暂停</Button>
-          )}
-          <Button icon={<EditOutlined />} type="link" onClick={() => openEdit(record)}>编辑</Button>
-          <Popconfirm title="确定删除吗?" onConfirm={() => handleDelete(record.id)}>
-            <Button icon={<DeleteOutlined />} type="link" danger>删除</Button>
+          <Popconfirm title="确认删除此任务吗？" onConfirm={() => handleDelete(record.id)} okText="确认" cancelText="取消">
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
           </Popconfirm>
-        </>
+        </Space>
       ),
     },
   ];
 
-  const completedColumns = [
-    { title: 'ID', dataIndex: 'id', key: 'id' },
-    {
-      title: '模板',
-      key: 'template',
-      render: (_: unknown, record: Task) => record.email_template?.subject || '未知模板',
-    },
-    {
-      title: '收件人',
-      key: 'to_email',
-      render: (_: unknown, record: Task) => record.email_template?.to_email || '-',
-    },
-    {
-      title: '执行频率',
-      key: 'schedule',
-      render: (_: unknown, record: Task) => formatCronToText(record.schedule),
-    },
-    {
-      title: 'Cron表达式',
-      dataIndex: 'schedule',
-      key: 'schedule_raw',
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => {
-        let color = 'default';
-        if (status === 'completed') color = 'success';
-        if (status === 'failed') color = 'error';
-        return <Tag color={color}>{status.toUpperCase()}</Tag>;
-      },
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (date: string) => date ? new Date(date).toLocaleString('zh-CN') : '-',
-    },
-    {
-      title: '上次执行时间',
-      dataIndex: 'last_executed_at',
-      key: 'last_executed_at',
-      render: (date: string) => date ? new Date(date).toLocaleString('zh-CN') : '-',
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: unknown, record: Task) => (
-        <Popconfirm title="确定删除吗?" onConfirm={() => handleDelete(record.id)}>
-          <Button icon={<DeleteOutlined />} type="link" danger>删除</Button>
-        </Popconfirm>
-      ),
-    },
-  ];
+  const pendingTasks = tasks.filter((task) => ['PENDING', 'RUNNING', 'PAUSED'].includes(task.status));
+  const completedTasks = tasks.filter((task) => ['COMPLETED', 'FAILED'].includes(task.status));
+  const currentTasks = tasks;
 
   return (
     <div>
-      <Tabs 
-        activeKey={activeTab} 
-        onChange={handleTabChange}
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Space align="center" size={12}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              borderRadius: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CalendarOutlined style={{ fontSize: 24, color: '#fff' }} />
+          </div>
+          <div>
+            <Title level={3} style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>
+              任务管理
+            </Title>
+            <Text type="secondary">创建和管理邮件调度任务</Text>
+          </div>
+        </Space>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          style={{
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            border: 'none',
+            height: 40,
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
+          创建任务
+        </Button>
+      </div>
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={(val) => {
+          setActiveTab(val)
+          setQueryStatus(val === 'pending' ? ['PENDING', 'RUNNING', 'PAUSED'] : ['COMPLETED', 'FAILED'])
+        }}
         items={[
           {
             key: 'pending',
-            label: '待执行',
-            children: (
-              <>
-                <div style={{ marginBottom: 16 }}>
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={handleCreate}
-                  >
-                    新建任务
-                  </Button>
-                </div>
-                <Table 
-                  rowKey="id" 
-                  columns={pendingColumns} 
-                  dataSource={tasks} 
-                  loading={loading} 
-                  pagination={{
-                    current: page,
-                    pageSize: pageSize,
-                    total: total,
-                    onChange: (p, ps) => {
-                      setPage(p);
-                      setPageSize(ps || 10);
-                    },
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (t) => `共 ${t} 条`,
-                  }}
-                />
-              </>
+            label: (
+              <span>
+                <ClockCircleOutlined />
+                进行中
+              </span>
             ),
           },
           {
             key: 'completed',
-            label: '已执行',
-            children: (
-              <Table 
-                rowKey="id" 
-                columns={completedColumns} 
-                dataSource={tasks} 
-                loading={loading} 
-                pagination={{
-                  current: page,
-                  pageSize: pageSize,
-                  total: total,
-                  onChange: (p, ps) => {
-                    setPage(p);
-                    setPageSize(ps || 10);
-                  },
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total) => `共 ${total} 条`,
-                }}
-              />
+            label: (
+              <span>
+                <ReloadOutlined />
+                已完成
+              </span>
             ),
           },
         ]}
+        style={{ marginBottom: 16 }}
       />
 
-      <Modal
-        title={editingId ? '编辑任务' : '新建任务'}
-        open={isModalOpen}
-        onOk={handleOk}
-        onCancel={() => setIsModalOpen(false)}
-        width={600}
-      >
-        <Form 
-            form={form} 
-            layout="vertical"
-            onValuesChange={(changedValues) => {
-                if (changedValues.type) setCronType(changedValues.type);
-            }}
-        >
-          <Form.Item
-            name="email_template_id"
-            label="选择模板"
-            rules={[{ required: true, message: '请选择模板' }]}
-          >
-            <Select>
-              {templates.map((t) => (
-                <Select.Option key={t.id} value={t.id}>
-                  {t.subject}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="type" label="执行频率" initialValue="daily">
-            <Radio.Group buttonStyle="solid">
-              <Radio.Button value="once">单次</Radio.Button>
-              <Radio.Button value="daily">每天</Radio.Button>
-              <Radio.Button value="weekly">每周</Radio.Button>
-              <Radio.Button value="monthly">每月</Radio.Button>
-            </Radio.Group>
-          </Form.Item>
-
-          {cronType === 'once' && (
-            <Form.Item 
-                name="date" 
-                label="执行时间" 
-                rules={[{ required: true, message: '请选择时间' }]}
-            >
-              <DatePicker showTime format="YYYY-MM-DD HH:mm" style={{ width: '100%' }} />
-            </Form.Item>
-          )}
-
-          {cronType !== 'once' && (
-            <Space align="baseline">
-               <Form.Item 
-                    name="time" 
-                    label="时间" 
-                    rules={[{ required: true, message: '请选择时间' }]}
-               >
-                 <TimePicker format="HH:mm" />
-               </Form.Item>
-
-               {cronType === 'weekly' && (
-                 <Form.Item 
-                    name="weekDay" 
-                    label="星期" 
-                    initialValue={1}
-                    rules={[{ required: true }]}
-                 >
-                   <Select style={{ width: 100 }}>
-                     <Select.Option value={1}>周一</Select.Option>
-                     <Select.Option value={2}>周二</Select.Option>
-                     <Select.Option value={3}>周三</Select.Option>
-                     <Select.Option value={4}>周四</Select.Option>
-                     <Select.Option value={5}>周五</Select.Option>
-                     <Select.Option value={6}>周六</Select.Option>
-                     <Select.Option value={0}>周日</Select.Option>
-                   </Select>
-                 </Form.Item>
-               )}
-
-               {cronType === 'monthly' && (
-                 <Form.Item 
-                    name="monthDay" 
-                    label="日期" 
-                    initialValue={1}
-                    rules={[{ required: true }]}
-                 >
-                   <InputNumber min={1} max={31} />
-                 </Form.Item>
-               )}
-            </Space>
-          )}
-        </Form>
-      </Modal>
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={currentTasks}
+        loading={loading}
+        pagination={{
+          current: page,
+          pageSize: pageSize,
+          total: total,
+          onChange: (p, ps) => {
+            setPage(p);
+            setPageSize(ps || 10);
+            fetchTasks(p, ps || 10);
+          },
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (t) => `共 ${t} 条任务`,
+          pageSizeOptions: ['10', '20', '50', '100'],
+        }}
+        scroll={{ x: 1000 }}
+      />
     </div>
   );
 };
