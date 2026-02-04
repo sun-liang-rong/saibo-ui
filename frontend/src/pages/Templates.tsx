@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Button, Space, Typography, Popconfirm, Tooltip, Modal, Form, Input, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, ClockCircleOutlined, MailOutlined } from '@ant-design/icons';
 import request from '../utils/request';
+import { TableSkeleton } from '../components/SkeletonLoader';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -158,8 +159,12 @@ const Templates: React.FC = () => {
   ];
 
   return (
-    <div>
-      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="fade-in">
+      {loading && templates.length === 0 ? (
+        <TableSkeleton />
+      ) : (
+        <>
+          <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space align="center" size={12}>
           <div
             style={{
@@ -254,6 +259,8 @@ const Templates: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+        </>
+      )}
     </div>
   );
 };

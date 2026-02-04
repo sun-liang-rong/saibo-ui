@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Table, Tag, Space, Typography } from 'antd';
 import { HistoryOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import request from '../utils/request';
+import { TableSkeleton } from '../components/SkeletonLoader';
 
 const { Title, Text } = Typography;
 
@@ -139,8 +140,12 @@ const History: React.FC = () => {
   ];
 
   return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
+    <div className="fade-in">
+      {loading && logs.length === 0 ? (
+        <TableSkeleton />
+      ) : (
+        <>
+          <div style={{ marginBottom: 24 }}>
         <Space align="center" size={12}>
           <div
             style={{
@@ -187,6 +192,8 @@ const History: React.FC = () => {
           backgroundColor: '#fff',
         }}
       />
+        </>
+      )}
     </div>
   );
 };

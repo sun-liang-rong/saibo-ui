@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Tabs, Tag, Button, Space, Typography, Popconfirm, Tooltip } from 'antd';
+import { Table, Tabs, Tag, Button, Space, Typography, Popconfirm, Tooltip, Modal, Form, Select, message, DatePicker, TimePicker, Radio } from 'antd';
 import { PlusOutlined, PlayCircleOutlined, PauseCircleOutlined, DeleteOutlined, ReloadOutlined, CalendarOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import request from '../utils/request';
-
-const { Title, Text } = Typography;
+import { TableSkeleton } from '../components/SkeletonLoader';
+import dayjs from 'dayjs';
+import { generateCronExpression } from '../utils/cronGenerator';
+import type { RepeatType } from '../utils/cronGenerator';
 
 interface Template {
   id: number;
@@ -41,6 +43,9 @@ const Tasks: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
   const [queryStatus, setQueryStatus] = useState(['PENDING', 'RUNNING', 'PAUSED'])
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [repeatType, setRepeatType] = useState<RepeatType>('once');
+  const [form] = Form.useForm();
   const fetchTemplates = useCallback(async () => {
     if (templates.length) return;
     const templateRes = (await request.get('/templates/all')) as Template[];
@@ -86,6 +91,34 @@ const Tasks: React.FC = () => {
     } catch {}
   };
 
+  const handleAddTask = () => {
+    form.resetFields();
+    setRepeatType('once');
+    setIsModalVisible(true);
+  };
+
+  const handleModalOk = async () => {
+    try {
+      const values = await form.validateFields();
+      
+      const cronExpression = generateCronExpression({
+        repeatType,
+        date: values.date ? values.date.toDate() : undefined,
+        time: values.time ? values.time.format('HH:mm') : undefined,
+        weekday: values.weekday,
+        dayOfMonth: values.dayOfMonth,
+      });
+
+      await request.post('/tasks', {
+        email_template_id: values.email_template_id,
+        schedule: cronExpression,
+      });
+      message.success('创建成功');
+      setIsModalVisible(false);
+      void fetchTasks();
+    } catch {}
+  };
+
   const getStatusConfig = (status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PAUSED') => {
     const configs = {
       PENDING: { color: 'default', icon: <ClockCircleOutlined />, text: '待执行' },
@@ -120,7 +153,7 @@ const Tasks: React.FC = () => {
       render: (schedule: string) => (
         <Space size={4}>
           <CalendarOutlined style={{ color: '#94a3b8' }} />
-          <Text>{schedule}</Text>
+          <Typography.Text>{schedule}</Typography.Text>
         </Space>
       ),
     },
@@ -176,8 +209,12 @@ const Tasks: React.FC = () => {
   ];
 
   return (
-    <div>
-      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="fade-in">
+      {loading && tasks.length === 0 ? (
+        <TableSkeleton />
+      ) : (
+        <>
+          <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Space align="center" size={12}>
           <div
             style={{
@@ -193,15 +230,16 @@ const Tasks: React.FC = () => {
             <CalendarOutlined style={{ fontSize: 24, color: '#fff' }} />
           </div>
           <div>
-            <Title level={3} style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>
+            <Typography.Title level={3} style={{ margin: 0, fontSize: 24, fontWeight: 600 }}>
               任务管理
-            </Title>
-            <Text type="secondary">创建和管理邮件调度任务</Text>
+            </Typography.Title>
+            <Typography.Text type="secondary">创建和管理邮件调度任务</Typography.Text>
           </div>
         </Space>
         <Button
           type="primary"
           icon={<PlusOutlined />}
+          onClick={handleAddTask}
           style={{
             background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
             border: 'none',
@@ -264,6 +302,110 @@ const Tasks: React.FC = () => {
         }}
         scroll={{ x: 1000 }}
       />
+
+      <Modal
+        title="创建定时任务"
+        open={isModalVisible}
+        onOk={handleModalOk}
+        onCancel={() => setIsModalVisible(false)}
+        okText="创建"
+        cancelText="取消"
+        width={600}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="email_template_id"
+            label="选择模板"
+            rules={[{ required: true, message: '请选择邮件模板' }]}
+          >
+            <Select
+              placeholder="请选择邮件模板"
+              showSearch
+              optionFilterProp="children"
+            >
+              {templates.map((template) => (
+                <Select.Option key={template.id} value={template.id}>
+                  {template.subject}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="重复类型">
+            <Radio.Group value={repeatType} onChange={(e) => setRepeatType(e.target.value)}>
+              <Radio.Button value="once">单次</Radio.Button>
+              <Radio.Button value="daily">每天</Radio.Button>
+              <Radio.Button value="weekly">每周</Radio.Button>
+              <Radio.Button value="monthly">每月</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item
+            name="time"
+            label="执行时间"
+            rules={[{ required: true, message: '请选择执行时间' }]}
+            initialValue={dayjs('09:00', 'HH:mm')}
+          >
+            <TimePicker
+              format="HH:mm"
+              placeholder="请选择时间"
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+
+          {repeatType === 'once' && (
+            <Form.Item
+              name="date"
+              label="执行日期"
+              rules={[{ required: true, message: '请选择执行日期' }]}
+            >
+              <DatePicker
+                placeholder="请选择日期"
+                style={{ width: '100%' }}
+                disabledDate={(current) => current && current < dayjs().startOf('day')}
+              />
+            </Form.Item>
+          )}
+
+          {repeatType === 'weekly' && (
+            <Form.Item
+              name="weekday"
+              label="星期"
+              rules={[{ required: true, message: '请选择星期' }]}
+              initialValue={1}
+            >
+              <Select placeholder="请选择星期">
+                <Select.Option value={1}>星期一</Select.Option>
+                <Select.Option value={2}>星期二</Select.Option>
+                <Select.Option value={3}>星期三</Select.Option>
+                <Select.Option value={4}>星期四</Select.Option>
+                <Select.Option value={5}>星期五</Select.Option>
+                <Select.Option value={6}>星期六</Select.Option>
+                <Select.Option value={0}>星期日</Select.Option>
+              </Select>
+            </Form.Item>
+          )}
+
+          {repeatType === 'monthly' && (
+            <Form.Item
+              name="dayOfMonth"
+              label="每月几号"
+              rules={[{ required: true, message: '请选择日期' }]}
+              initialValue={1}
+            >
+              <Select placeholder="请选择日期">
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                  <Select.Option key={day} value={day}>
+                    {day}日
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
+        </Form>
+      </Modal>
+        </>
+      )}
     </div>
   );
 };
