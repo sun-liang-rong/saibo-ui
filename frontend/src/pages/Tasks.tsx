@@ -4,7 +4,6 @@ import { PlusOutlined, PlayCircleOutlined, PauseCircleOutlined, DeleteOutlined, 
 import request from '../utils/request';
 
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 
 interface Template {
   id: number;
@@ -87,7 +86,7 @@ const Tasks: React.FC = () => {
     } catch {}
   };
 
-  const getStatusConfig = (status: string) => {
+  const getStatusConfig = (status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PAUSED') => {
     const configs = {
       PENDING: { color: 'default', icon: <ClockCircleOutlined />, text: '待执行' },
       RUNNING: { color: 'processing', icon: <PlayCircleOutlined />, text: '运行中' },
@@ -130,7 +129,7 @@ const Tasks: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 120,
-      render: (status: string) => {
+      render: (status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PAUSED') => {
         const { color, icon, text } = getStatusConfig(status);
         return (
           <Tag color={color} icon={icon}>
@@ -175,10 +174,6 @@ const Tasks: React.FC = () => {
       ),
     },
   ];
-
-  const pendingTasks = tasks.filter((task) => ['PENDING', 'RUNNING', 'PAUSED'].includes(task.status));
-  const completedTasks = tasks.filter((task) => ['COMPLETED', 'FAILED'].includes(task.status));
-  const currentTasks = tasks;
 
   return (
     <div>
@@ -251,7 +246,7 @@ const Tasks: React.FC = () => {
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={currentTasks}
+        dataSource={tasks}
         loading={loading}
         pagination={{
           current: page,

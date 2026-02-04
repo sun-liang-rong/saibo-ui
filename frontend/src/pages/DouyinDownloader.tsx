@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Input, Button, message, Spin, Image, Typography, Space, Tag, Descriptions, Row, Col, Divider } from 'antd';
-import { DownloadOutlined, PlayCircleOutlined, UserOutlined, HeartOutlined, MessageOutlined, ShareAltOutlined, VideoCameraOutlined } from '@ant-design/icons';
+import { Card, Input, Button, message, Spin, Image, Typography, Space, Tag, Row, Col, Divider } from 'antd';
+import { DownloadOutlined, PlayCircleOutlined, HeartOutlined, MessageOutlined, ShareAltOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import request from '../utils/request';
 
 const { Title, Text, Paragraph } = Typography;

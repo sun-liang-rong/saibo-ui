@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu, Button, Dropdown, Avatar, theme, Space, Divider } from 'antd';
+import { Layout, Menu, Button, Dropdown, Avatar, Space, Divider } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   FileTextOutlined,
@@ -20,9 +20,6 @@ const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = React.useState(false);
-  const {
-    token: { colorBgContainer },
-  } = theme.useToken();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
