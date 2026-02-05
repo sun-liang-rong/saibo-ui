@@ -46,7 +46,7 @@ export function parseCronExpression(cron: string): CronConfig | null {
     }
 
     const [second, minute, hour, day, month, weekday] = parts;
-
+    console.log(second, 'second')
     const minuteNum = parseInt(minute, 10);
     const hourNum = parseInt(hour, 10);
     const timeStr = `${String(hourNum).padStart(2, '0')}:${String(minuteNum).padStart(2, '0')}`;
