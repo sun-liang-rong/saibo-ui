@@ -10,6 +10,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { MailModule } from './modules/mail/mail.module';
 import { DouyinModule } from './modules/douyin/douyin.module';
+import { OllamaModule } from './modules/ollama/ollama.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { DouyinModule } from './modules/douyin/douyin.module';
     LogsModule,
     MailModule,
     DouyinModule,
+    OllamaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

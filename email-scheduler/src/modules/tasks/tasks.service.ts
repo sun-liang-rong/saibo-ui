@@ -187,7 +187,9 @@ export class TasksService implements OnModuleInit {
         task.email_template.to_email,
         task.email_template.subject,
         task.email_template.body,
-        task.email_template.type
+        task.email_template.type,
+        task.email_template.use_ai,
+        task.email_template.prompt
       );
 
       await this.logsService.create({

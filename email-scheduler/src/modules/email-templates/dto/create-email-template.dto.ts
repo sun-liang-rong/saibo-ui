@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsEmail, IsEmpty, IsOptional, IsIn } from 'class-validator';
+import { IsNotEmpty, IsString, IsEmail, IsEmpty, IsOptional, IsIn, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEmailTemplateDto {
@@ -21,4 +21,14 @@ export class CreateEmailTemplateDto {
   @IsEmail()
   @IsNotEmpty()
   to_email: string;
+
+  @ApiProperty({ description: 'AI 提示词', required: false })
+  @IsString()
+  @IsOptional()
+  prompt: string;
+
+  @ApiProperty({ description: '是否使用 AI 生成内容', default: false })
+  @IsBoolean()
+  @IsOptional()
+  use_ai: boolean;
 }

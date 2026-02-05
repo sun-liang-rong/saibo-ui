@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Space, Typography, Popconfirm, Tooltip, Modal, Form, Input, message } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, ClockCircleOutlined, MailOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Typography, Popconfirm, Tooltip, Modal, Form, Input, message, Switch, Divider, Alert } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, ClockCircleOutlined, MailOutlined, RobotOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import request from '../utils/request';
 import { TableSkeleton } from '../components/SkeletonLoader';
 
@@ -12,6 +12,8 @@ interface Template {
   subject: string;
   body: string;
   to_email: string;
+  prompt?: string;
+  use_ai?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +29,9 @@ const Templates: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
+  const [previewContent, setPreviewContent] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [form] = Form.useForm();
   const [page, setPage] = useState<number>(1);
@@ -83,6 +88,31 @@ const Templates: React.FC = () => {
       setIsModalVisible(false);
       void fetchTemplates();
     } catch {}
+  };
+
+  const handleGeneratePreview = async () => {
+    try {
+      const values = await form.validateFields();
+      if (!values.prompt) {
+        message.warning('请先输入 AI 提示词');
+        return;
+      }
+
+      setPreviewLoading(true);
+      const response = await request.post('/ollama/generate', {
+        prompt: values.prompt,
+      }, {
+        timeout: 60000,
+      });
+
+      setPreviewContent(response.text || '');
+      setIsPreviewModalVisible(true);
+      message.success('AI 内容生成成功');
+    } catch (error: unknown) {
+      message.error(`生成失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   const columns = [
@@ -254,10 +284,115 @@ const Templates: React.FC = () => {
             name="body"
             label="邮件内容"
             rules={[{ required: true, message: '请输入邮件内容' }]}
+            extra="使用 {{ai_content}} 作为 AI 生成内容的占位符"
           >
-            <TextArea rows={8} placeholder="请输入邮件内容" />
+            <TextArea rows={6} placeholder="请输入邮件内容，使用 {{ai_content}} 占位符表示 AI 生成的内容" />
+          </Form.Item>
+
+          <Divider />
+
+          <Form.Item
+            name="use_ai"
+            label={
+              <Space size={8}>
+                <RobotOutlined />
+                <Text>启用 AI 生成</Text>
+              </Space>
+            }
+            valuePropName="checked"
+          >
+            <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+          </Form.Item>
+
+          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.use_ai !== currentValues.use_ai}>
+            {({ getFieldValue }) =>
+              getFieldValue('use_ai') ? (
+                <>
+                  <Alert
+                    message="AI 配置说明"
+                    description={
+                      <ul style={{ margin: 0, paddingLeft: 20 }}>
+                        <li>在邮件内容中使用 <Text code>{`{{ai_content}}`}</Text> 作为占位符</li>
+                        <li>系统将在发送邮件时自动生成内容并替换占位符</li>
+                        <li>确保 Ollama 服务已启动并正常运行</li>
+                      </ul>
+                    }
+                    type="info"
+                    showIcon
+                    icon={<InfoCircleOutlined />}
+                    style={{ marginBottom: 16 }}
+                  />
+                  <Form.Item
+                    name="prompt"
+                    label="AI 提示词"
+                    rules={[{ required: true, message: '请输入 AI 提示词' }]}
+                    extra="描述您希望 AI 生成的内容，例如：生成一段关于今日天气的温馨问候"
+                  >
+                    <TextArea
+                      rows={4}
+                      placeholder="请输入 AI 提示词，例如：生成一段关于今日天气的温馨问候语"
+                    />
+                  </Form.Item>
+                  <Form.Item>
+                    <Button
+                      type="primary"
+                      icon={<RobotOutlined />}
+                      onClick={handleGeneratePreview}
+                      loading={previewLoading}
+                      style={{
+                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                        border: 'none',
+                      }}
+                    >
+                      生成 AI 内容预览
+                    </Button>
+                  </Form.Item>
+                </>
+              ) : null
+            }
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={
+          <Space size={8}>
+            <RobotOutlined />
+            <Text>AI 生成内容预览</Text>
+          </Space>
+        }
+        open={isPreviewModalVisible}
+        onCancel={() => setIsPreviewModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setIsPreviewModalVisible(false)}>
+            关闭
+          </Button>,
+          <Button
+            key="copy"
+            type="primary"
+            onClick={() => {
+              navigator.clipboard.writeText(previewContent);
+              message.success('已复制到剪贴板');
+            }}
+          >
+            复制内容
+          </Button>,
+        ]}
+        width={600}
+      >
+        <div
+          style={{
+            maxHeight: 400,
+            overflowY: 'auto',
+            padding: '16px',
+            background: '#f5f5f5',
+            borderRadius: '8px',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          {previewContent || '暂无内容'}
+        </div>
       </Modal>
         </>
       )}

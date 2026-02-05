@@ -17,6 +17,12 @@ export class EmailTemplate {
   @Column({ name: 'to_email' })
   to_email: string;
 
+  @Column({ name: 'prompt', type: 'text', nullable: true })
+  prompt: string;
+
+  @Column({ name: 'use_ai', type: 'boolean', default: false })
+  use_ai: boolean;
+
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 

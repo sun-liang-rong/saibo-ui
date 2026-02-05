@@ -8,6 +8,7 @@ import { newTemplate } from '../email-templates/assets/new-template';
 import * as dayjs from 'dayjs';
 import { goldTemplate } from '../email-templates/assets/gold-template';
 import { douyinHotSearchTemplate } from '../email-templates/assets/douyin-hot-search-template';
+import { OllamaService } from '../ollama/ollama.service';
 const weatherEmojiMap: Record<string, string> = {
   '00': '☀️',   // 晴
   '01': '⛅',   // 多云
@@ -31,7 +32,10 @@ const weatherEmojiMap: Record<string, string> = {
 export class MailService {
   private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(MailService.name);
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private ollamaService: OllamaService,
+  ) {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get('MAIL_HOST'),
       port: this.configService.get('MAIL_PORT'),
@@ -67,7 +71,14 @@ export class MailService {
     });
   }
 
-  async sendMail(to: string, subject: string, html: string, type: string): Promise<void> {
+  async sendMail(
+    to: string,
+    subject: string,
+    html: string,
+    type: string,
+    useAI: boolean = false,
+    prompt?: string,
+  ): Promise<void> {
     try {
       let finalHtml = html;
 
@@ -81,6 +92,20 @@ export class MailService {
         finalHtml = await this.getDouyinHotSearchTemplate();
       } else if (type === 'moyu') {
         finalHtml = await this.getMoyu();
+      }
+
+      if (useAI && prompt) {
+        try {
+          this.logger.log('正在使用 AI 生成邮件内容...');
+          const aiContent = await this.ollamaService.generateText(prompt);
+          finalHtml = finalHtml.replace('{{ai_content}}', aiContent);
+          this.logger.log('AI 内容生成成功');
+        } catch (error) {
+          this.logger.warn('AI 生成失败，使用默认内容', error.message);
+          finalHtml = finalHtml.replace('{{ai_content}}', '（AI 生成内容暂时不可用，将显示默认内容）');
+        }
+      } else {
+        finalHtml = finalHtml.replace('{{ai_content}}', '');
       }
       
       await this.transporter.sendMail({
