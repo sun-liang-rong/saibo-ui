@@ -95,6 +95,9 @@ const Tasks: React.FC = () => {
 
   const handleAddTask = () => {
     form.resetFields();
+    form.setFieldsValue({
+      time: dayjs('09:00', 'HH:mm'),
+    });
     setRepeatType('once');
     setIsEditMode(false);
     setEditingTaskId(null);
@@ -102,7 +105,15 @@ const Tasks: React.FC = () => {
   };
 
   const handleEdit = (task: Task) => {
-    const parsed = parseCronExpression(task.schedule) as CronConfig;
+    console.log('解析 cron 表达式:', task.schedule);
+    const parsed = parseCronExpression(task.schedule);
+    console.log('解析结果:', parsed);
+    
+    if (!parsed) {
+      message.error('无法解析任务调度时间，请重新创建任务');
+      return;
+    }
+    
     setRepeatType(parsed.repeatType);
 
     const formValues: any = {
@@ -129,7 +140,9 @@ const Tasks: React.FC = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-
+      console.log('表单值:', values);
+      console.log('repeatType:', repeatType);
+      
       const cronExpression = generateCronExpression({
         repeatType,
         date: values.date ? values.date.toDate() : undefined,
@@ -137,6 +150,7 @@ const Tasks: React.FC = () => {
         weekday: values.weekday,
         dayOfMonth: values.dayOfMonth,
       });
+      console.log('生成的 cron 表达式:', cronExpression);
 
       if (isEditMode && editingTaskId) {
         await request.put(`/tasks/${editingTaskId}`, {
@@ -398,7 +412,6 @@ const Tasks: React.FC = () => {
                 name="time"
                 label="执行时间"
                 rules={[{ required: true, message: '请选择执行时间' }]}
-                initialValue={dayjs('09:00', 'HH:mm')}
               >
                 <TimePicker
                   format="HH:mm"
@@ -426,7 +439,6 @@ const Tasks: React.FC = () => {
                   name="weekday"
                   label="星期"
                   rules={[{ required: true, message: '请选择星期' }]}
-                  initialValue={1}
                 >
                   <Select placeholder="请选择星期">
                     <Select.Option value={1}>星期一</Select.Option>
@@ -445,7 +457,6 @@ const Tasks: React.FC = () => {
                   name="dayOfMonth"
                   label="每月几号"
                   rules={[{ required: true, message: '请选择日期' }]}
-                  initialValue={1}
                 >
                   <Select placeholder="请选择日期">
                     {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (

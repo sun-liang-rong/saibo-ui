@@ -40,4 +40,7 @@ export class LogsService {
     const newLog = this.logsRepository.create(log);
     return await this.logsRepository.save(newLog);
   }
+  async deleteByTaskId(taskId: number): Promise<void> {
+    await this.logsRepository.delete({ task_id: taskId });
+  }
 }

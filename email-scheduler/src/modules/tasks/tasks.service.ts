@@ -113,6 +113,7 @@ export class TasksService implements OnModuleInit {
     if (task.status === TaskStatus.RUNNING) {
       this.deleteCronJob(task.id);
     }
+    await this.logsService.deleteByTaskId(id);
     await this.tasksRepository.delete(id);
   }
 
