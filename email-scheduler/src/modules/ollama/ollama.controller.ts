@@ -38,7 +38,7 @@ export class OllamaController {
       },
     });
 
-    return { text: result };
+    return { data: result, success: true };
   }
 
   @Get('health')

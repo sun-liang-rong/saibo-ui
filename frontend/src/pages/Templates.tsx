@@ -105,7 +105,7 @@ const Templates: React.FC = () => {
         timeout: 60000,
       });
 
-      setPreviewContent(response.text || '');
+      setPreviewContent(response.data || '');
       setIsPreviewModalVisible(true);
       message.success('AI 内容生成成功');
     } catch (error: unknown) {
