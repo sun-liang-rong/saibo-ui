@@ -22,6 +22,9 @@ module.exports = {
         MAIL_PASSWORD: 'stgzhjsdgspbdjde',
         MAIL_FROM: '2531636478@qq.com',
         WEATHER_API_KEY: '2c224ab1ed59418fae58083926260',
+        OLLAMA_URL: 'http://localhost:11434',
+        OLLAMA_MODEL: 'qwen2.5:0.5b',
+        OLLAMA_TIMEOUT: 60000
       },
     },
   ],
