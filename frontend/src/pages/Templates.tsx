@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Table, Button, Space, Typography, Popconfirm, Tooltip, Modal, Form, Input, message, Switch, Divider, Alert } from 'antd';
+import { Table, Button, Space, Typography, Popconfirm, Tooltip, Modal, Form, Input, message, Switch, Divider, Alert, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, ClockCircleOutlined, MailOutlined, RobotOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import request from '../utils/request';
 import { TableSkeleton } from '../components/SkeletonLoader';
@@ -12,6 +12,7 @@ interface Template {
   subject: string;
   body: string;
   to_email: string;
+  type?: string;
   prompt?: string;
   use_ai?: boolean;
   created_at: string;
@@ -58,6 +59,7 @@ const Templates: React.FC = () => {
   const handleAdd = () => {
     setEditingTemplate(null);
     form.resetFields();
+    form.setFieldsValue({ type: 'custom' });
     setIsModalVisible(true);
   };
 
@@ -133,6 +135,29 @@ const Templates: React.FC = () => {
           <Text>{subject}</Text>
         </Space>
       ),
+    },
+    {
+      title: '模版类型',
+      dataIndex: 'type',
+      key: 'type',
+      width: 100,
+      render: (type: string) => {
+        const typeMap: Record<string, string> = {
+          custom: '自定义',
+          weather: '天气',
+          news: '新闻',
+          gold: '金价',
+          douyin: '抖音热点',
+          moyu: '摸鱼',
+          ai: 'AI生成',
+        };
+        return (
+          <Space size={4}>
+            {type === 'ai' && <RobotOutlined style={{ color: '#8b5cf6' }} />}
+            <Text>{typeMap[type] || type}</Text>
+          </Space>
+        );
+      },
     },
     {
       title: '收件人',
@@ -265,6 +290,22 @@ const Templates: React.FC = () => {
       >
         <Form form={form} layout="vertical">
           <Form.Item
+            name="type"
+            label="模版类型"
+            rules={[{ required: true, message: '请选择模版类型' }]}
+          >
+            <Select placeholder="请选择模版类型">
+              <Select.Option value="custom">自定义</Select.Option>
+              <Select.Option value="weather">天气</Select.Option>
+              <Select.Option value="news">新闻</Select.Option>
+              <Select.Option value="gold">金价</Select.Option>
+              <Select.Option value="douyin">抖音热点</Select.Option>
+              <Select.Option value="moyu">摸鱼</Select.Option>
+              <Select.Option value="ai">AI生成</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
             name="subject"
             label="邮件主题"
             rules={[{ required: true, message: '请输入邮件主题' }]}
@@ -289,25 +330,11 @@ const Templates: React.FC = () => {
             <TextArea rows={6} placeholder="请输入邮件内容，使用 {{ai_content}} 占位符表示 AI 生成的内容" />
           </Form.Item>
 
-          <Divider />
-
-          <Form.Item
-            name="use_ai"
-            label={
-              <Space size={8}>
-                <RobotOutlined />
-                <Text>启用 AI 生成</Text>
-              </Space>
-            }
-            valuePropName="checked"
-          >
-            <Switch checkedChildren="开启" unCheckedChildren="关闭" />
-          </Form.Item>
-
-          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.use_ai !== currentValues.use_ai}>
+          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.type !== currentValues.type}>
             {({ getFieldValue }) =>
-              getFieldValue('use_ai') ? (
+              getFieldValue('type') === 'ai' ? (
                 <>
+                  <Divider />
                   <Alert
                     message="AI 配置说明"
                     description={

@@ -11,9 +11,9 @@ export class CreateEmailTemplateDto {
   @IsOptional()
   body: string;
 
-  @ApiProperty({ description: '模版类型', enum: ['weather', 'news', 'gold', 'douyin', 'moyu', 'custom'], default: 'custom' })
+  @ApiProperty({ description: '模版类型', enum: ['weather', 'news', 'gold', 'douyin', 'moyu', 'custom', 'ai'], default: 'custom' })
   @IsString()
-  @IsIn(['weather', 'news', 'gold', 'douyin', 'moyu', 'custom'])
+  @IsIn(['weather', 'news', 'gold', 'douyin', 'moyu', 'custom', 'ai'])
   @IsOptional()
   type: string;
 

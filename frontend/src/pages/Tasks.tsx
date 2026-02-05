@@ -243,7 +243,7 @@ const Tasks: React.FC = () => {
       fixed: 'right' as const,
       render: (_: unknown, record: Task) => (
         <Space size="small">
-          {record.status === "completed" ? null : (
+          {record.status === "COMPLETED" ? null : (
             <Tooltip title="编辑任务">
               <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
                 编辑
