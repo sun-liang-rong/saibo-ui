@@ -5,7 +5,7 @@ import request from '../utils/request';
 import { TableSkeleton } from '../components/SkeletonLoader';
 import dayjs from 'dayjs';
 import { generateCronExpression, parseCronExpression } from '../utils/cronGenerator';
-import type { RepeatType, CronConfig } from '../utils/cronGenerator';
+import type { RepeatType } from '../utils/cronGenerator';
 
 interface Template {
   id: number;
