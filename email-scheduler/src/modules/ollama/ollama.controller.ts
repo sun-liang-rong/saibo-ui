@@ -1,18 +1,27 @@
 import { Controller, Post, Body, Get, Logger } from '@nestjs/common';
 import { OllamaService, OllamaGenerateRequest } from './ollama.service';
 import { ApiTags, ApiOperation, ApiProperty, ApiResponse } from '@nestjs/swagger';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 class GenerateTextDto {
   @ApiProperty({ description: '提示词' })
+  @IsNotEmpty({ message: '提示词不能为空' })
+  @IsString({ message: '提示词必须是字符串' })
   prompt: string;
 
   @ApiProperty({ description: '模型名称', required: false })
+  @IsOptional()
+  @IsString({ message: '模型名称必须是字符串' })
   model?: string;
 
   @ApiProperty({ description: '温度参数 (0-1)', required: false })
+  @IsOptional()
+  @IsNumber({}, { message: '温度参数必须是数字' })
   temperature?: number;
 
   @ApiProperty({ description: '最大生成 token 数', required: false })
+  @IsOptional()
+  @IsNumber({}, { message: '最大生成 token 数必须是数字' })
   max_tokens?: number;
 }
 

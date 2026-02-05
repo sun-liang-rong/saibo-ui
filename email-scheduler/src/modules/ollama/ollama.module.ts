@@ -5,7 +5,13 @@ import { OllamaService } from './ollama.service';
 import { OllamaController } from './ollama.controller';
 
 @Module({
-  imports: [ConfigModule, HttpModule],
+  imports: [
+    ConfigModule,
+    HttpModule.register({
+      timeout: 60000,
+      maxRedirects: 5,
+    }),
+  ],
   controllers: [OllamaController],
   providers: [OllamaService],
   exports: [OllamaService],

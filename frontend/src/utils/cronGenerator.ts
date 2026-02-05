@@ -41,17 +41,17 @@ export function generateCronExpression(config: CronConfig): string {
 export function parseCronExpression(cron: string): CronConfig | null {
   try {
     const parts = cron.trim().split(/\s+/);
-    if (parts.length !== 5 && parts.length !== 6) {
+    if (parts.length !== 6) {
       return null;
     }
 
-    const [ minute, hour, day, month, weekday] = parts.map((p, i) => i === 0 ? parseInt(p, 10) : p);
+    const [second, minute, hour, day, month, weekday] = parts;
 
-    const minuteNum = parseInt(minute as string, 10);
-    const hourNum = parseInt(hour as string, 10);
+    const minuteNum = parseInt(minute, 10);
+    const hourNum = parseInt(hour, 10);
     const timeStr = `${String(hourNum).padStart(2, '0')}:${String(minuteNum).padStart(2, '0')}`;
 
-    const isOnce = day !== '*' && month !== '*';
+    const isOnce = day !== '*' && month !== '*' && weekday !== '*';
     const isDaily = day === '*' && month === '*' && weekday === '*';
     const isWeekly = day === '*' && month === '*' && weekday !== '*';
     const isMonthly = day !== '*' && month === '*' && weekday === '*';
@@ -59,7 +59,7 @@ export function parseCronExpression(cron: string): CronConfig | null {
     if (isOnce) {
       return {
         repeatType: 'once',
-        date: new Date(parseInt(month as string, 10), parseInt(day as string, 10) - 1, 0),
+        date: new Date(new Date().getFullYear(), parseInt(month, 10) - 1, parseInt(day, 10)),
         time: timeStr,
       };
     }
@@ -75,7 +75,7 @@ export function parseCronExpression(cron: string): CronConfig | null {
       return {
         repeatType: 'weekly',
         time: timeStr,
-        weekday: parseInt(weekday as string, 10),
+        weekday: parseInt(weekday, 10),
       };
     }
 
@@ -83,7 +83,7 @@ export function parseCronExpression(cron: string): CronConfig | null {
       return {
         repeatType: 'monthly',
         time: timeStr,
-        dayOfMonth: parseInt(day as string, 10),
+        dayOfMonth: parseInt(day, 10),
       };
     }
 

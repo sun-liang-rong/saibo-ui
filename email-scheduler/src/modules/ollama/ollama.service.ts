@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
 import { AxiosError } from 'axios';
+import { TimeoutError } from 'rxjs';
 
 export interface OllamaGenerateRequest {
   model: string;
@@ -42,7 +43,7 @@ export class OllamaService {
   ) {
     this.baseUrl = this.configService.get('OLLAMA_URL', 'http://localhost:11434');
     this.model = this.configService.get('OLLAMA_MODEL', 'llama2');
-    this.defaultTimeout = this.configService.get<number>('OLLAMA_TIMEOUT', 30000);
+    this.defaultTimeout = this.configService.get<number>('OLLAMA_TIMEOUT', 60000);
     this.maxRetries = 3;
   }
 
@@ -50,13 +51,7 @@ export class OllamaService {
     const request: OllamaGenerateRequest = {
       model: options?.model || this.model,
       prompt,
-      stream: false,
-      options: {
-        temperature: 0.7,
-        top_p: 0.9,
-        max_tokens: 500,
-        ...options?.options,
-      },
+      stream: false
     };
 
     let lastError: Error | null = null;
@@ -71,16 +66,23 @@ export class OllamaService {
             `${this.baseUrl}/api/generate`,
             request,
           ).pipe(
-            timeout(this.defaultTimeout),
-            catchError((error: AxiosError) => {
-              if (error.code === 'ECONNREFUSED') {
-                throw new InternalServerErrorException(
-                  '无法连接到 Ollama 服务，请确保 Ollama 已启动并运行',
-                );
-              }
-              if (error.code === 'ECONNABORTED') {
+            timeout({
+              each: this.defaultTimeout,
+            }),
+            catchError((error: Error) => {
+              if (error instanceof TimeoutError) {
                 throw new InternalServerErrorException(
                   'Ollama 服务响应超时，请检查网络或增加超时时间',
+                );
+              }
+              if (error instanceof AxiosError) {
+                if (error.code === 'ECONNREFUSED') {
+                  throw new InternalServerErrorException(
+                    '无法连接到 Ollama 服务，请确保 Ollama 已启动并运行',
+                  );
+                }
+                throw new InternalServerErrorException(
+                  `Ollama API 调用失败: ${error.message}`,
                 );
               }
               throw new InternalServerErrorException(
@@ -89,7 +91,7 @@ export class OllamaService {
             }),
           ),
         );
-
+        console.log(response, 'response')
         const generatedText = (response as any).data?.response || '';
         this.logger.log(`Text generated successfully (${generatedText.length} chars)`);
 
@@ -130,7 +132,7 @@ export class OllamaService {
   async checkHealth(): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/api/tags`).pipe(timeout(5000)),
+        this.httpService.get(`${this.baseUrl}/api/tags`).pipe(timeout({ each: 5000 })),
       );
       return true;
     } catch {
@@ -141,7 +143,7 @@ export class OllamaService {
   async getModels(): Promise<string[]> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/api/tags`).pipe(timeout(5000)),
+        this.httpService.get(`${this.baseUrl}/api/tags`).pipe(timeout({ each: 5000 })),
       );
       return (response as any).data?.models?.map((m: any) => m.name) || [];
     } catch (error) {
