@@ -21,6 +21,13 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = React.useState(false);
 
+  React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login', { replace: true });
+    }
+  }, [navigate]);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
