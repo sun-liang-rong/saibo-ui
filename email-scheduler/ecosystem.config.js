@@ -7,7 +7,7 @@ module.exports = {
       autorestart: true,
       watch: false,
       env: {
-        PORT: 3000,
+        PORT: 3002,
         NODE_ENV: 'production',
         DB_HOST: 'mysql5.sqlpub.com',
         DB_PORT: 3310,
